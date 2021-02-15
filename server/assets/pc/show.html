@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Show | Client</title>
+	<link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://aaivan.com/assets/js/scripts.js"></script>
+
+<div id="app" class="p-20">
+	<button @click="lockClient()" class="text-white bg-indigo-500 border-0 py-2 px-8 mr-3 focus:outline-none hover:bg-indigo-600 rounded text-lg">
+		Lock
+	</button>
+	<button @click="unlockClient()" class="text-white bg-indigo-500 border-0 py-2 px-8 mr-3 focus:outline-none hover:bg-indigo-600 rounded text-lg">
+		Unlock
+	</button>
+	<button @click="pingClient()" class="text-white bg-indigo-500 border-0 py-2 px-8 mr-3 focus:outline-none hover:bg-indigo-600 rounded text-lg">
+		Ping
+	</button>
+	<button @click="messageClient()" class="text-white bg-indigo-500 border-0 py-2 px-8 mr-3 focus:outline-none hover:bg-indigo-600 rounded text-lg">
+		Message
+	</button>
+	<button @click="powerOffClient()" class="text-white bg-red-500 border-0 py-2 px-8 mr-3 focus:outline-none hover:bg-indigo-600 rounded text-lg">
+		Shutdown
+	</button>
+</div>
+<script type="text/javascript">
+let app = new Vue({
+	el: "#app",
+	data: {
+		client_id: 1,
+		msg: "This is a test message for now",
+	},
+	methods: {
+		lockClient: function() {
+			let url = "/client/lock?id=" + this.client_id;
+			this.sendRequest(url);
+		},
+		unlockClient: function() {
+			let url = "/client/unlock?id=" + this.client_id;
+			this.sendRequest(url);
+		},
+		pingClient: function() {
+			let url = "/client/ping?id=" + this.client_id;
+			this.sendRequest(url);
+		},
+		messageClient: function() {
+			let url = "/client/message?id=" + this.client_id + "&msg=" + this.msg;
+			this.sendRequest(url);
+		},
+		powerOffClient: function() {
+			let url = "/client/poweroff?id=" + this.client_id;
+			this.sendRequest(url);
+		},
+
+
+		sendRequest(url) {
+			AxiosRequest.get(url, {
+				success: (res) => {
+					console.log(res);
+				},
+				error: (res) => {
+					console.log(res);
+				},
+				except: (error) => {
+					console.err(error);
+				},
+				finally: () => {},
+			});
+		},
+	},
+});
+</script>
+</body>
+</html>
