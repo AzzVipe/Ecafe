@@ -37,7 +37,7 @@ static void ecafe_server_start(void)
 	char buf[1024];
 	fd_set allset, rset;
 	socklen_t socklen, cliaddr_len;
-	struct client temp = {0};
+	struct client temp = {0}, **client_array;
 	struct sockaddr_in cliaddr;
 
 	listenfd = Tcp_listen("0.0.0.0", SERVER_PORT, &socklen);
@@ -83,6 +83,15 @@ static void ecafe_server_start(void)
 
 		if (client_is_dead(&rset) == 0) {
 			nclients--;
+		}
+
+		if (client_getall(&client_array) != nclients) {
+			perror("client_getall error");
+			continue;
+		}
+
+		for (int i = 0; i < nclients; ++i) {
+			client_dump(client_array[i]);
 		}
 
 	}

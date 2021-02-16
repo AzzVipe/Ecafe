@@ -4,17 +4,17 @@
 int main(int argc, char *argv[])
 {
 	int sockfd, nbytes, nfds, nready;
-	char buf[MAXLINE], *ip, port_str[10];
+	char buf[MAXLINE], *ip;
 	fd_set rset;
 
 	if (argc != 2) {
 		fprintf(stderr, "Usage : %s <IP>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-
 	ip = argv[1];
-	sprintf(port_str, "%d", SERVER_PORT);
-	if ((sockfd = Tcp_connect(ip, port_str)) < 0) {
+	fprintf(stderr, "IP : %s\nPort : %s\n", ip, SERVER_PORT);
+
+	if ((sockfd = Tcp_connect(ip, SERVER_PORT)) < 0) {
 		fprintf(stderr, "Error: Tcp_connect\n");
 		exit(1);
 	}

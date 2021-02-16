@@ -97,10 +97,8 @@ int ecafe_message(struct request *req)
 	int id, rv;
 	struct client *temp;
 	struct response res = {0};
-	char *message;
 
 	id = atoi(request_param_get(req, "id"));
-	message = request_param_get(req, "message");
 	temp = client_get(id);
 
 	if (ecafe_request_message(req) == -1)
