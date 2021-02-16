@@ -11,8 +11,12 @@
 
 typedef char * String;
 
+int  GetString(char **line, FILE *fp);
+
+int  GetStringv2(const char *buf, String *line);
+
 /**
- * GetString(): reads string from stdin and intelligently
+ * GetString_v3(): reads string from stdin and intelligently
  * stores it in annonymos memory and finally returns the
  * char* to calling function.
  *
@@ -24,7 +28,8 @@ typedef char * String;
  *
  * Usage: String s = GetString()
  */
-unsigned int GetString(char **line, FILE *fp);
+
+char* GetStringv3(void);
 
 /**
  * GetInt() function returns first occurence of int
@@ -32,6 +37,7 @@ unsigned int GetString(char **line, FILE *fp);
  * This function solves the issue of scanf(), when
  * integer is expecting (%d) and non number is entered
  */
+
 int GetInt(void);
 
 /**
@@ -52,7 +58,6 @@ int GetCharacter();
 
 int GetLine(char *line, FILE *file);
 
-int GetStringv2(const char *buf, String *line);
 
 
 #endif

@@ -1,5 +1,4 @@
 client
 obj
 lib/*.o
-!lib/validator.o
 !lib/sqlite3.o
