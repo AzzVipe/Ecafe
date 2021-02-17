@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-	int sockfd, nbytes, nfds, nready;
+	int sockfd, nbytes, nfds;
 	char buf[MAXLINE], *ip;
 	fd_set rset;
 
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 		FD_SET(sockfd, &rset);
 
 		nfds = sockfd + 1;
-		nready = select(nfds, &rset, NULL, NULL, NULL);
+		select(nfds, &rset, NULL, NULL, NULL);
 
 		if (FD_ISSET(sockfd, &rset)) {
 			// Echoing back

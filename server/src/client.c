@@ -89,7 +89,7 @@ int client_is_dead(fd_set *rset)
 void client_dump(struct client *temp)
 {
 	printf("Id    : %d\n", temp->id);
-	printf("Name  : %d\n", temp->id);
+	printf("Name  : %s\n", temp->name);
 
 	char *buf = malloc(sizeof(char) * BUFSIZ);
 	struct sockaddr_in *sockaddr = &(temp->addr);
@@ -101,4 +101,5 @@ void client_dump(struct client *temp)
 	}
 
 	printf("IP    : %s\n", buf);
+	printf("Pid   : %d\n\n", temp->pid);
 }

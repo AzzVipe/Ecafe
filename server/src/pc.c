@@ -17,7 +17,6 @@ int		page_pc_poweroff(struct http_request *);
 int
 page_pc_show(struct http_request *req)
 {
-	struct request ecafe_req = {0};
 	int id = 0;
 
 	http_populate_get(req);

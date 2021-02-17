@@ -130,7 +130,6 @@ int GetChararcter()
 	struct termios ts_orig, ts;
 	//int fd = open_tty();
 	int status;
-	int ch = 0;
 
 	// Backing original_TTY_DEVICE config
 	status = tcgetattr(STDIN_FILENO, &ts_orig);

@@ -19,7 +19,7 @@ int ecafe_lock(struct request *req)
 		return -1;
 	}
 
-	if ((rv = ecafe_request_send(req, temp->fd)) == -1) {
+	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
 		fprintf(stderr, "ecafe_request_send : error\n");
 		return -1;
 	}
@@ -50,7 +50,7 @@ int ecafe_unlock(struct request *req)
 	if (ecafe_request_unlock(req) == 0)
 		return -1;
 	
-	if ((rv = ecafe_request_send(req, temp->fd)) == -1) {
+	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
 		return -1;
 	}
 
@@ -77,7 +77,7 @@ int ecafe_ping(struct request *req)
 	if (ecafe_request_ping(req) == -1) 
 		return -1;
 
-	if ((rv = ecafe_request_send(req, temp->fd)) == -1) {
+	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
 		return -1;
 	}
 
@@ -104,7 +104,7 @@ int ecafe_message(struct request *req)
 	if (ecafe_request_message(req) == -1)
 		return -1;
 
-	if ((rv = ecafe_request_send(req, temp->fd)) == -1) {
+	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
 		return -1;
 	}
 
@@ -132,7 +132,7 @@ int ecafe_action(struct request *req)
 	if (ecafe_request_action(req) == -1)
 		return -1;
 
-	if ((rv = ecafe_request_send(req, temp->fd)) == -1) {
+	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
 		return -1;
 	}
 
@@ -159,7 +159,7 @@ int ecafe_poweroff(struct request *req)
 	if (ecafe_request_poweroff(req) == -1)
 		return -1;
 
-	if ((rv = ecafe_request_send(req, temp->fd)) == -1) {
+	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
 		return -1;
 	}
 
@@ -170,6 +170,28 @@ int ecafe_poweroff(struct request *req)
 	}
 
 	ecafe_response_action(&res);
+
+	return 0;
+}
+
+int ecafe_getdetails(struct client *cli_info)
+{
+	int rv;
+	struct request req = {0};
+	struct response res = {0};
+
+	if (ecafe_request_getdetails(&req) == -1)
+		return -1;
+
+	if ((rv = ecafe_request_send(cli_info->fd, &req)) == -1) 
+		return -1;
+
+	if ((rv = ecafe_response_recv(cli_info->fd, &res)) == 0)
+		return -2;
+	else if (rv == -1)
+		return -1;
+
+	ecafe_response_getdetails(&res, cli_info);
 
 	return 0;
 }

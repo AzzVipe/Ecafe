@@ -52,6 +52,16 @@ int ecafe_request_poweroff(struct request *req)
 
 }
 
+int ecafe_request_getdetails(struct request *req)
+{
+	char uri[] = "/getdetails";
+
+	request_type_set(req, REQ_TYPE_POST);
+	request_uri_set(req, uri);
+
+	return 0;
+}
+
 int ecafe_request_action(struct request *req)
 {
 	char uri[] = "/action";
@@ -66,7 +76,7 @@ int ecafe_request_action(struct request *req)
 	return 0;
 }
 
-int ecafe_request_send(struct request *req, int client)
+int ecafe_request_send(int client, struct request *req)
 {
 	int nbytes;
 	char buf[1024];

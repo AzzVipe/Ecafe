@@ -26,7 +26,7 @@ int ecafe_request_handle(char *buf, int server)
 		return -1;
 	}
 
-	if (ecafe_response_send(&res, server)) {
+	if (ecafe_response_send(server, &res)) {
 		fprintf(stderr, "ecafe_response_send : error \n");
 		return -1;
 	}

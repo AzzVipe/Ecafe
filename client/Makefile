@@ -6,12 +6,12 @@ CFLAGS=-Iinclude -I$(LIBSPATH) -Wall
 OBJS= $(OBJSPATH)/ecafe_request.o $(OBJSPATH)/ecafe.o $(OBJSPATH)/command.o $(OBJSPATH)/system_linux.o
 	
 LIBS= $(LIBSPATH)/request.o $(LIBSPATH)/response.o $(LIBSPATH)/easyio.o $(LIBSPATH)/str.o $(LIBSPATH)/sock_lib.o \
-     $(OBJS) 
+     $(LIBSPATH)/validator.o $(OBJS) 
 
 # CFLAGS+=-fPIE
 CFLAGS+=-g
 
-object: ecafe_request ecafe command system_linux request response easyio sock_lib str
+object: ecafe_request ecafe command system_linux request response easyio sock_lib str validator
 
 ecafe: $(SRCSPATH)/ecafe.c
 	$(CC) -c -g -o $(OBJSPATH)/ecafe.o $(SRCSPATH)/ecafe.c $(CFLAGS)
@@ -21,9 +21,6 @@ command: $(SRCSPATH)/command.c
 
 ecafe_request: $(SRCSPATH)/ecafe_request.c
 	$(CC) -c -g -o $(OBJSPATH)/ecafe_request.o $(SRCSPATH)/ecafe_request.c $(CFLAGS)
-
-ecafe_response: $(SRCSPATH)/ecafe_response.c
-	$(CC) -c -g -o $(OBJSPATH)/ecafe_response.o $(SRCSPATH)/ecafe_response.c $(CFLAGS)
 
 system_linux: $(SRCSPATH)/system_linux.c
 	$(CC) -c -g -o $(OBJSPATH)/system_linux.o $(SRCSPATH)/system_linux.c $(CFLAGS)
@@ -46,4 +43,7 @@ sock_lib: $(LIBSPATH)/sock_lib.c
 
 str: $(LIBSPATH)/str.c
 	$(CC) -c -g -o $(LIBSPATH)/str.o $(LIBSPATH)/str.c $(CFLAGS)
+
+validator: $(LIBSPATH)/validator.c
+	$(CC) -c -g -o $(LIBSPATH)/validator.o $(LIBSPATH)/validator.c $(CFLAGS)
 

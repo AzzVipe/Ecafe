@@ -8,7 +8,8 @@
 
 int GetString(char **line, FILE *fp)
 {
-	unsigned int size = 100, c, written;
+	int c;
+	unsigned int size = 100, written;
 	char *s, *news;
 
 	s = (String)malloc(sizeof(char) * size);
@@ -125,12 +126,11 @@ double GetDouble(void)
 }
 
 
-int GetChararcter()
+int GetCharacter(void)
 {
 	struct termios ts_orig, ts;
 	//int fd = open_tty();
 	int status;
-	int ch = 0;
 
 	// Backing original_TTY_DEVICE config
 	status = tcgetattr(STDIN_FILENO, &ts_orig);

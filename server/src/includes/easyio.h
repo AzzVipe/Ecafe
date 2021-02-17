@@ -48,7 +48,7 @@ int GetInt(void);
  */
 double GetDouble(void);
 
-int GetCharacter();
+int GetCharacter(void);
 
 
 /**

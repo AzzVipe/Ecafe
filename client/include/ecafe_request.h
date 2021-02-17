@@ -23,8 +23,9 @@ int ecafe_request_action(struct request *req, struct response *res);
 int ecafe_request_message(struct request *req, struct response *res);
 int ecafe_request_ping(struct request *req, struct response *res);
 int ecafe_request_poweroff(struct request *req, struct response *res);
+int ecafe_request_getdetails(struct request *req, struct response *res);
 
-int ecafe_response_send(struct response *res, int client);
+int ecafe_response_send(int client, struct response *res);
 
 
 

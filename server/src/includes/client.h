@@ -26,6 +26,7 @@ typedef struct {
 struct client {
 	int id;
 	int fd;
+	pid_t pid;
 	char *name;
 	User *user;
 	struct sockaddr_in addr;

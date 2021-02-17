@@ -40,7 +40,7 @@ bool validate_email(const char *email)
 	regex_t regex;
 	char regexstr[64];
 
-	sprintf(regexstr, "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+.[a-z]{2,}$");
+	// sprintf(regexstr, "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+.[a-z]{2,}$");
 
 	if (regcomp(&regex, regexstr, REG_EXTENDED) != 0) {
 		puts("regcomp error");

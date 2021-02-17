@@ -126,7 +126,7 @@ int response_record_push(struct response *res, struct record *rec)
 int response_prepare(struct response *res, char *buf, size_t size)
 {
 	char *ptr;
-	ssize_t bufi;
+	size_t bufi;
 	int status, nrecords, nkeyvals;
 	struct record *rec;
 
@@ -188,7 +188,6 @@ int response_prepare(struct response *res, char *buf, size_t size)
 int response_parse(char *buf, size_t size, struct response *res)
 {
 	int ret = 0;
-	ssize_t nbytes = 0;
 	char *key, *val, *ptr, *last, *bufcp;
 	struct record rec = {0};
 

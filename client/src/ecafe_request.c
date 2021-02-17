@@ -123,7 +123,41 @@ int ecafe_request_poweroff(struct request *req, struct response *res)
 	return 0;
 }
 
-int ecafe_response_send(struct response *res, int client)
+int ecafe_request_getdetails(struct request *req, struct response *res)
+{
+	pid_t pid;
+	char hostname[1024], buf[1024];
+
+	if (req == NULL || res == NULL)
+		return -1;
+
+	if (gethostname(hostname, 1024) == -1) {
+			strcpy(hostname, "*");
+		}
+
+	if (response_record_keyval_set(res, 0, "hostname", hostname) == -1) {
+		fprintf(stderr, "response_record_keyval_set : error\n");
+		response_status_set(res, RES_STATUS_ERROR);
+		
+		return -1;
+	}
+
+	pid = getpid();
+	sprintf(buf, "%d", pid);
+	
+	if (response_record_keyval_set(res, 1, "pid", buf) == -1) {
+		fprintf(stderr, "response_record_keyval_set : pid error\n");
+		response_status_set(res, RES_STATUS_ERROR);
+		
+		return -1;
+	}
+
+	response_status_set(res, RES_STATUS_OK);
+
+	return 0;
+}
+
+int ecafe_response_send(int client, struct response *res)
 {
 	int nbytes;
 	char buf[1024];
