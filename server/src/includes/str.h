@@ -9,8 +9,8 @@
 #include <string.h>
 
 struct Segment {
-	const void *start_off;  /* Start Offset of a string/array_element/etc. */
-	const void *end_off;    /* End Offset of a string/array_element/etc.   */
+	void *start_off;  /* Start Offset of a string/array_element/etc. */
+	void *end_off;    /* End Offset of a string/array_element/etc.   */
 };
 
 

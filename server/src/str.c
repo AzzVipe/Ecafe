@@ -47,7 +47,7 @@ int str_trim(char *line)
 /**
  * Internal function used by find_next() function
  */
-static const char *match(const char *s, const char *pattern)
+static char *match(const char *s, const char *pattern)
 {
     int i;
     for (i = 0; s[i] && pattern[i]; ++i)
@@ -68,17 +68,17 @@ bool str_find_next(const char *s, const char *pattern, struct Segment *seg)
     if (pattern == NULL || pattern[0] == '\0') return false;
 
     // End Match offset returned by match function 
-    const char *match_off = NULL;
+    char *match_off = NULL;
 
     // Start Offset of the given string from where next search will begin
-    const char *start = s;
+    char *start = s;
 
     // If find_next() is called after first found pattern then set start
     // position from last found position
     if (seg->start_off != NULL)
         start = (char *)seg->end_off + 1;
 
-    for (const char *cp = start; *cp; ++cp)
+    for (char *cp = start; *cp; ++cp)
     {
         // If first character of pattern matches then call match function
         // to match whole pattern and if match found then set offsets

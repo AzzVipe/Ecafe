@@ -127,18 +127,18 @@ int response_prepare(struct response *res, char *buf, size_t size)
 {
 	char *ptr;
 	size_t bufi;
-	int status, nrecords, nkeyvals;
+	int st, nrecords, nkeyvals;
 	struct record *rec;
 
 	if (res == NULL || buf == NULL)
 		return -1;
 
 	buf[0] = 0;
-	status = res->status;
+	st = res->status;
 
 	/* Prepare response header which consists of two part
 	 * <code> <message> */
-	bufi = sprintf(buf, "%d %s\r\n", status, res->msg);
+	bufi = sprintf(buf, "%d %s\r\n", st, res->msg);
 
 	/* Now status is 100 therefore we need to add the response data in buf */
 	nrecords = res->nrecords;
@@ -182,7 +182,7 @@ int response_prepare(struct response *res, char *buf, size_t size)
 		buf[bufi++] = '\n';
 	}
 
-	return bufi >= size? -1 : bufi;
+	return bufi >= size? -1 : (int) bufi;
 }
 
 int response_parse(char *buf, size_t size, struct response *res)
