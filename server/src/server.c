@@ -33,11 +33,10 @@ static void *start_thread(void *arg)
 static void ecafe_server_start(void)
 {
 	int listenfd, connfd, maxfd;
-	int nclients = 0, nready;
-	char buf[1024];
+	int nclients = 0, id = 0, nready;
 	fd_set allset, rset;
 	socklen_t socklen, cliaddr_len;
-	struct client temp = {0};
+	struct client temp = {0}, **client_array;
 	struct sockaddr_in cliaddr;
 
 	listenfd = Tcp_listen("0.0.0.0", SERVER_PORT, &socklen);
@@ -65,11 +64,14 @@ static void ecafe_server_start(void)
 				perror("accept error");
 				continue;
 			}
-
-			temp.id = ++nclients;
+			nclients++;
+			temp.id = ++id;
 			temp.fd = connfd;
 			// @Danger: Add support for ipv6
 			memcpy(&(temp.addr), &cliaddr, cliaddr_len);
+
+			if (ecafe_getdetails(&temp) == -1) 
+				fprintf(stderr, "ecafe_request_getdetails : error\n");
 
 			client_add(&temp);
 			FD_SET(connfd, &allset);
@@ -79,6 +81,15 @@ static void ecafe_server_start(void)
 
 			nready--;
 			puts("Client request accepted!");
+
+			if (client_getall(&client_array) != nclients) {
+				perror("client_getall error");
+				continue;
+			}
+
+			for (int i = 0; i < nclients; ++i) {
+				client_dump(client_array[i]);
+			}
 		}
 
 		if (client_is_dead(&rset) == 0) {

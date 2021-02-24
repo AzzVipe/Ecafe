@@ -22,7 +22,7 @@
 #define BUFFSIZE        1024
 #define LISTENQ         8
 #define SERVER_IP       "127.0.0.1"
-#define SERVER_PORT     3333
+#define SERVER_PORT     "3030"
 #define SA     			struct sockaddr
 
 #define max(a, b)		(((a) > (b)) ? (a) : (b))

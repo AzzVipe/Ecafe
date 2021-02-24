@@ -326,7 +326,6 @@ int list_isempty(List *ls)
 int list_remove(List *ls, void *needle, int (*search_callback)(void *data, void *needle))
 {
 	const int DELETED = 1, NOT_DELETED = 0;
-	void *data;
 
 	if (ls == NULL) 		return NOT_DELETED;
 	if (ls->head == NULL)	return NOT_DELETED;

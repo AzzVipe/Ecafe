@@ -1,17 +1,22 @@
 #ifndef EASYIO_H
 #define EASYIO_H
 
+#define ATTR_RESET "\x1b[0m"
+#define FG_RED     "\x1b[31m"
+#define FG_GREEN   "\x1b[32m"
+#define FG_BLUE    "\x1b[34m"
+#define FG_YELLOW  "\x1b[93m"
+#define BOLD       "\x1b[1m"
+#define CLEAR_SCR_HOME     "\x1b[2J\x1b[H"
 
 typedef char * String;
 
-/**
- * char* GetString(void);
- * int GetInt(void);
- * double GetDouble(void);
- */
+int  GetString(char **line, FILE *fp);
+
+int  GetStringv2(const char *buf, String *line);
 
 /**
- * GetString(): reads string from stdin and intelligently
+ * GetString_v3(): reads string from stdin and intelligently
  * stores it in annonymos memory and finally returns the
  * char* to calling function.
  *
@@ -23,7 +28,8 @@ typedef char * String;
  *
  * Usage: String s = GetString()
  */
-char* GetString(void);
+
+char* GetStringv3(void);
 
 /**
  * GetInt() function returns first occurence of int
@@ -31,6 +37,7 @@ char* GetString(void);
  * This function solves the issue of scanf(), when
  * integer is expecting (%d) and non number is entered
  */
+
 int GetInt(void);
 
 /**
@@ -40,5 +47,17 @@ int GetInt(void);
  * double is expecting (%f) and non number is entered
  */
 double GetDouble(void);
+
+int GetCharacter(void);
+
+
+/**
+ * Usage: int n = GetLine( char *dest, FILE *src)
+ *
+ */
+
+int GetLine(char *line, FILE *file);
+
+
 
 #endif

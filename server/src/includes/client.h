@@ -26,6 +26,7 @@ typedef struct {
 struct client {
 	int id;
 	int fd;
+	pid_t pid;
 	char *name;
 	User *user;
 	struct sockaddr_in addr;
@@ -39,6 +40,7 @@ int client_is_dead(fd_set *rset);
 struct client *client_get(int id);
 int client_getall(struct client ***clients);
 void client_dump(struct client *temp);
+char *client_ipstr(struct client *temp);
 
 
 

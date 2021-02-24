@@ -19,6 +19,8 @@ KORE_SECCOMP_FILTER("app",
 	KORE_SYSCALL_ALLOW(clone),
 	KORE_SYSCALL_ALLOW(dup),
 	KORE_SYSCALL_ALLOW(set_robust_list),
+	KORE_SYSCALL_ALLOW(pselect6),
+	KORE_SYSCALL_ALLOW(newfstatat),
 );
 
 

@@ -1,22 +1,83 @@
+#include <termios.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <easyio.h>
 
-/**
- * GetString(): reads string from stdin and intelligently
- * stores it in annonymos memory and finally returns the
- * char* to calling function.
- *
- * It doesn't include trailing newline character. String
- * will be stored in memory this way:
- * +---+---+---+---+---+----+
- * | H | E | L | L | O | \0 |
- * +---+---+---+---+---+----+
- *
- * Usage: String s = GetString()
- */
-char* GetString(void)
+
+int GetString(char **line, FILE *fp)
+{
+	int c;
+	unsigned int size = 100, written;
+	char *s, *news;
+
+	s = (String)malloc(sizeof(char) * size);
+	written = 0;
+	while((c = getc(fp)) != '\n' && c != EOF)
+	{
+		/* written + 2 because, for null byte space and indext starts from 0 */
+		if(written + 2 >= size)
+		{
+			news = (char *)realloc(s, size += size);
+
+			/* recovering on failure */
+			if(news)
+				s = news; // s gets address of newly allocated mem
+			else
+				s = s;    // s gets old address, recovering from failure
+		}
+		s[written++] = c;
+	}
+
+	s[written] = '\0';
+	*line = s;
+
+	if (written == 0 && c == '\0')
+		written = -1;
+
+	return written;
+}
+
+int GetStringv2(const char *buf, String *line)
+{
+	unsigned int size = 100, c;
+	long int written;
+	char *s, *news;
+
+	written = 0;
+	if (buf == NULL)
+		return written;
+
+	s = (char *)malloc(sizeof(char) * size);
+	int i = 0;
+	while((c = buf[i++]) != '\n' && c != '\0')
+	{
+		/* written + 2 because, for null byte space and indext starts from 0 */
+		if(written + 2 >= size)
+		{
+			news = (char *)realloc(s, size += size);
+
+			/* recovering on failure */
+			if(news)
+				s = news; // s gets address of newly allocated mem
+			else
+				s = s;    // s gets old address, recovering from failure
+		}
+		s[written++] = c;
+	}
+
+	s[written] = '\0';
+	*line = s;
+
+	if (written == 0 && c == '\0')
+		written = -1;
+
+	return written;
+}
+
+
+char* GetStringv3(void)
 {
 	unsigned int size = 100, c, written;
 	char *s, *news;
@@ -44,35 +105,70 @@ char* GetString(void)
 	return s;
 }
 
-/**
- * GetInt() function returns first occurence of int
- * from the input stream stdin.
- * This function solves the issue of scanf(), when
- * integer is expecting (%d) and non number is entered
- */
+
+
 int GetInt(void)
 {
 	int num;
-	char* s;
-	s = GetString();
+	char *s;
+	GetString(&s, stdin);
 	sscanf(s, "%d", &num);
 	return num;
 }
 
-/**
- * GetDouble() function returns first occurence of double
- * from the input stream stdin.
- * This function solves the issue of scanf(), when
- * double is expecting (%f) and non number is entered
- */
 double GetDouble(void)
 {
 	double num;
-	char* s;
-	s = GetString();
+	char *s;
+	GetString(&s, stdin);
 	sscanf(s, "%lf", &num);
 	return num;
 }
 
 
+int GetCharacter(void)
+{
+	struct termios ts_orig, ts;
+	//int fd = open_tty();
+	int status;
 
+	// Backing original_TTY_DEVICE config
+	status = tcgetattr(STDIN_FILENO, &ts_orig);
+	if(status == -1)
+	{
+		fprintf(stderr, "ERROR: Failed to backup Terminal settings");
+	}
+
+	// Setting bit mask in c_lflag
+	ts = ts_orig;
+	ts.c_lflag &= ~(ICANON | ECHO);
+
+	// Setting attribute
+	tcsetattr(STDIN_FILENO, TCSANOW, &ts);
+
+	// Testing input
+	int c = getchar();
+
+	// Restoring original settings
+	status = tcsetattr(STDIN_FILENO, TCSANOW, &ts_orig);
+	if(status != 0)
+	{
+		fputs("ERROR: Failed to restore original settings\n", stderr);
+	}
+
+	return c;
+}
+
+int GetLine(char *line, FILE *file)
+{
+	int c, i;
+	i = 0;
+	while ((c = getc(file)) != '\n' && c != EOF)
+	{
+		line[i++] = c;
+	}
+
+	line[i] = '\0';
+
+	return i;
+}

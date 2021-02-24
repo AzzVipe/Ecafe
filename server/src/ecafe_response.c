@@ -99,3 +99,19 @@ int ecafe_response_poweroff(struct response *res)
 
 	return 0;
 }
+
+int ecafe_response_getdetails(struct response *res, struct client *cli_info)
+{
+	char *hostname, *pid;
+
+	if (ecafe_response_print(res, stderr) == -1)
+		return -1;
+
+	hostname = response_keyval_get(&(res->records[0]), "hostname");
+	pid      = response_keyval_get(&res->records[1], "pid");
+
+	cli_info->name = hostname;
+	cli_info->pid = atoi(pid);
+	
+	return 0;
+}

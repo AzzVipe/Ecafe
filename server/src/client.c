@@ -33,7 +33,7 @@ int client_getall(struct client ***client_array)
 	*client_array = array;
 
 	if (array == NULL || client_array == NULL)
-		return -1;
+		return 0;
 
 	return i;
 }
@@ -89,16 +89,27 @@ int client_is_dead(fd_set *rset)
 void client_dump(struct client *temp)
 {
 	printf("Id    : %d\n", temp->id);
-	printf("Name  : %d\n", temp->id);
+	printf("Name  : %s\n", temp->name);
 
+	char *buf;
+
+	buf = client_ipstr(temp);
+
+	printf("IP    : %s\n", buf? buf : "(blank)");
+	printf("Pid   : %d\n\n", temp->pid);
+}
+
+
+char *client_ipstr(struct client *temp)
+{
 	char *buf = malloc(sizeof(char) * BUFSIZ);
 	struct sockaddr_in *sockaddr = &(temp->addr);
 
 	if (inet_ntop(sockaddr->sin_family, &sockaddr->sin_addr, buf, BUFSIZ) == NULL) {
 		free(buf);
 
-		return;
+		return NULL;
 	}
 
-	printf("IP    : %s\n", buf);
+	return buf;
 }

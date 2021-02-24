@@ -159,7 +159,7 @@ request_param_get(struct request *req, const char *key)
 {
 	size_t len = request_param_size(req);
 
-	for (int i = 0; i < len; ++i) {
+	for (size_t i = 0; i < len; ++i) {
 		if (strcmp(req->param_keys[i], key) == 0)
 			return req->param_values[i];
 	}
@@ -172,7 +172,7 @@ request_header_get(struct request *req, const char *key)
 {
 	size_t len = request_header_size(req);
 
-	for (int i = 0; i < len; ++i) {
+	for (size_t i = 0; i < len; ++i) {
 		if (strcmp(req->header_keys[i], key) == 0)
 			return req->header_values[i];
 	}
@@ -383,7 +383,7 @@ void request_dump(struct request *req)
 	fprintf(stderr, "    uri: \"%s\"\n", req->uri);
 
 	fprintf(stderr, "    header: [\n");
-	for (int i = 0; i < request_header_size(req); ++i) {
+	for (size_t i = 0; i < request_header_size(req); ++i) {
 		if (i == request_header_size(req) - 1) {
 			fprintf(stderr, "        %s: \"%s\"\n",
 					req->header_keys[i],
@@ -397,7 +397,7 @@ void request_dump(struct request *req)
 	fprintf(stderr, "    ]\n");
 
 	fprintf(stderr, "    params: [\n");
-	for (int i = 0; i < request_param_size(req); ++i) {
+	for (size_t i = 0; i < request_param_size(req); ++i) {
 		if (i == request_param_size(req) - 1) {
 			fprintf(stderr, "        %s: \"%s\"\n",
 					req->param_keys[i],

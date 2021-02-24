@@ -84,7 +84,7 @@ bool str_find_next(const char *s, const char *pattern, struct Segment *seg)
         // to match whole pattern and if match found then set offsets
         if (*cp == pattern[0])
         {
-            if (match_off = match(cp, pattern))
+            if ((match_off = match(cp, pattern)))
             {
                 // Start offset of the string s    offset is a mem address
                 seg->start_off = cp;
@@ -106,7 +106,6 @@ char *str_replace(const char *s, const char *pattern, const char *substitue)
     if (pattern == NULL || pattern[0] == '\0') return false;
     if (substitue == NULL)	                   return false;
 
-    char *end_off = NULL;
     struct Segment seg = {NULL};
     char *res = (char *)malloc(sizeof(char) * 256);
 
@@ -138,7 +137,7 @@ char *str_replace(const char *s, const char *pattern, const char *substitue)
     else
     {
         // Copy left over string s (if any)
-        while(res[res_i++] = s[s_i++])
+        while((res[res_i++] = s[s_i++]))
             ; // Body of the loop
 
         // Mark the end of the string

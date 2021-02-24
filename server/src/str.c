@@ -47,7 +47,7 @@ int str_trim(char *line)
 /**
  * Internal function used by find_next() function
  */
-static const char *match(const char *s, const char *pattern)
+static char *match(const char *s, const char *pattern)
 {
     int i;
     for (i = 0; s[i] && pattern[i]; ++i)
@@ -68,23 +68,23 @@ bool str_find_next(const char *s, const char *pattern, struct Segment *seg)
     if (pattern == NULL || pattern[0] == '\0') return false;
 
     // End Match offset returned by match function 
-    const char *match_off = NULL;
+    char *match_off = NULL;
 
     // Start Offset of the given string from where next search will begin
-    const char *start = s;
+    char *start = s;
 
     // If find_next() is called after first found pattern then set start
     // position from last found position
     if (seg->start_off != NULL)
         start = (char *)seg->end_off + 1;
 
-    for (const char *cp = start; *cp; ++cp)
+    for (char *cp = start; *cp; ++cp)
     {
         // If first character of pattern matches then call match function
         // to match whole pattern and if match found then set offsets
         if (*cp == pattern[0])
         {
-            if (match_off = match(cp, pattern))
+            if ((match_off = match(cp, pattern)))
             {
                 // Start offset of the string s    offset is a mem address
                 seg->start_off = cp;
@@ -106,7 +106,6 @@ char *str_replace(const char *s, const char *pattern, const char *substitue)
     if (pattern == NULL || pattern[0] == '\0') return false;
     if (substitue == NULL)	                   return false;
 
-    char *end_off = NULL;
     struct Segment seg = {NULL};
     char *res = (char *)malloc(sizeof(char) * 256);
 
@@ -138,7 +137,7 @@ char *str_replace(const char *s, const char *pattern, const char *substitue)
     else
     {
         // Copy left over string s (if any)
-        while(res[res_i++] = s[s_i++])
+        while((res[res_i++] = s[s_i++]))
             ; // Body of the loop
 
         // Mark the end of the string

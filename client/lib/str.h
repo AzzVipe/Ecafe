@@ -9,8 +9,8 @@
 #include <string.h>
 
 struct Segment {
-	void *start_off;  /* Start Offset of a string/array_element/etc. */
-	void *end_off;    /* End Offset of a string/array_element/etc.   */
+	const void *start_off;  /* Start Offset of a string/array_element/etc. */
+	const void *end_off;    /* End Offset of a string/array_element/etc.   */
 };
 
 
@@ -25,6 +25,5 @@ char 	*str_replace(const char *s, const char *pattern, const char *substitue);
 char 	*str_tolower(char *s);
 char 	*str_toupper(char *s);
 int 	str_split(char *in, char *delim, char **out, size_t ele);
-bool 	str_isempty(char *line); /* Empty string's first byte is nul-byte */
 
 #endif
