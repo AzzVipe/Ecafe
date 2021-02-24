@@ -4,8 +4,10 @@
 
 #include <dynamic.h>
 #include <ecafe.h>
+#include <client.h>
 
 static int	prepare_ecafe_request(struct http_request *, struct request *);
+int		page_pc_index(struct http_request *);
 int		page_pc_show(struct http_request *);
 int		page_pc_lock(struct http_request *);
 int		page_pc_unlock(struct http_request *);
@@ -13,6 +15,40 @@ int		page_pc_message(struct http_request *);
 int		page_pc_ping(struct http_request *);
 int		page_pc_action(struct http_request *);
 int		page_pc_poweroff(struct http_request *);
+
+int
+page_pc_index(struct http_request *req)
+{
+	struct kore_buf *buf;
+	const char *client_json_format = "{\"id\": %d, \"name\": \"%s\", \"ip\": \"%s\", \"pid\": %d}";
+	int ret;
+	struct client **clients;
+	// char *res_error = "{\"message\": \"Failed to fetch clients\"}";
+
+	if ((ret = ecafe_clientall(&clients)) == -1) {
+		kore_log(LOG_ERR, "Failed to process fetch clients");
+	}
+
+	buf = kore_buf_alloc(1024);
+	kore_buf_appendf(buf, "{ \"clients\": [");
+	for (int i = 0; i < ret; ++i) {
+		client_dump(clients[i]);
+		kore_buf_appendf(buf, client_json_format,
+			clients[i]->id,
+			clients[i]->name,
+			client_ipstr(clients[i]),
+			clients[i]->pid);
+		if (i != ret - 1) {
+			kore_buf_appendf(buf, ", ");
+		}
+	}
+	kore_buf_appendf(buf, "]}");
+
+	http_response(req, HTTP_STATUS_OK, buf->data, buf->offset);
+	kore_buf_free(buf);
+
+	return (KORE_RESULT_OK);
+}
 
 int
 page_pc_show(struct http_request *req)

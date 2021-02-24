@@ -195,3 +195,8 @@ int ecafe_getdetails(struct client *cli_info)
 
 	return 0;
 }
+
+int ecafe_clientall(struct client ***clients)
+{
+	return client_getall(clients);
+}
