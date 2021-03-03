@@ -11,7 +11,7 @@
 #include <command.h>
 #include <system_linux.h>
 
-#define PARAM_MESSAGE  "message"
+#define PARAM_MESSAGE  "msg"
 #define PARAM_FOOD_ID  "foodid"
 #define PARAM_FOOD_QTY "qty"
 #define PARAM_PROG     "prog"
