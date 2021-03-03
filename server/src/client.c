@@ -78,7 +78,6 @@ int client_is_dead(fd_set *rset, fd_set *allset)
 				close(temp->fd);
 				FD_CLR(temp->fd, allset);
 				client_remove(temp->id);
-
 				return 0;
 			}
 		}
