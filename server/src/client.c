@@ -62,7 +62,7 @@ int client_id_callback(void *data, void *needle)
 	return !(((struct client *)needle)->id == ((struct client *)data)->id);
 }
 
-int client_is_dead(fd_set *rset)
+int client_is_dead(fd_set *rset, fd_set *allset)
 {
 	int nbytes;
 	char buf[1024];
@@ -77,7 +77,7 @@ int client_is_dead(fd_set *rset)
 				fprintf(stderr, "Client %d Terminated\n", temp->id);
 				client_remove(temp->id);
 				FD_CLR(temp->fd, rset);
-
+				
 				return 0;
 			}
 		}

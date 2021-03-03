@@ -92,7 +92,7 @@ static void ecafe_server_start(void)
 			}
 		}
 
-		if (client_is_dead(&rset) == 0) {
+		if (client_is_dead(&rset, &allset) == 0) {  /* @Todo : Fix server infinite loop when client aborts*/
 			nclients--;
 		}
 
