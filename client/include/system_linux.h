@@ -7,8 +7,10 @@
 int system_gnome_lock();
 int system_gnome_unlock();
 
-int system_kde_lock();
-int system_kde_unlock();
+int system_linux_lock();
+int system_linux_unlock();
+
+int system_linux_poweroff();
 
 
 

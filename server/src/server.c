@@ -90,9 +90,11 @@ static void ecafe_server_start(void)
 			for (int i = 0; i < nclients; ++i) {
 				client_dump(client_array[i]);
 			}
+			if (nready == 0)
+				continue;
 		}
 
-		if (client_is_dead(&rset) == 0) {
+		if (client_is_dead(&rset, &allset) == 0) {  /* @Todo : Fix server infinite loop when client aborts*/
 			nclients--;
 		}
 

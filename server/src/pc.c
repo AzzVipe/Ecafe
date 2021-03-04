@@ -44,6 +44,7 @@ page_pc_index(struct http_request *req)
 	}
 	kore_buf_appendf(buf, "]}");
 
+	http_response_header(req, "content-type", "application/json");
 	http_response(req, HTTP_STATUS_OK, buf->data, buf->offset);
 	kore_buf_free(buf);
 
@@ -193,7 +194,7 @@ page_pc_poweroff(struct http_request *req)
 		http_response(req, 400, NULL, 0);
 		return (KORE_RESULT_OK);
 	}
-	if (ecafe_action(&ecafe_req) == -1) {
+	if (ecafe_poweroff(&ecafe_req) == -1) {
 		kore_log(LOG_ERR, "Failed to process power off request");
 		res = res_error;
 	}

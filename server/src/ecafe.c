@@ -47,10 +47,13 @@ int ecafe_unlock(struct request *req)
 	temp = client_get(id);
 
 	puts("OK");
-	if (ecafe_request_unlock(req) == 0)
+	if (ecafe_request_unlock(req) == -1) {
+		fprintf(stderr, "ecafe_request_unlock : error\n");
 		return -1;
+	}
 	
 	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
+		fprintf(stderr, "ecafe_request_send : error\n");
 		return -1;
 	}
 

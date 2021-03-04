@@ -13,7 +13,7 @@ int ecafe_request_lock(struct request *req, struct response *res)
 	if (req == NULL || res == NULL)
 		return -1;
 
-	if(system_kde_lock() == -1) {
+	if(system_linux_lock() == -1) {
 		response_status_set(res, RES_STATUS_ERROR);
 		return -1;
 	}
@@ -27,7 +27,7 @@ int ecafe_request_unlock(struct request *req, struct response *res)
 	if (req == NULL || res == NULL)
 		return -1;
 
-	if(system_kde_unlock() == -1) {
+	if(system_linux_unlock() == -1) {
 		response_status_set(res, RES_STATUS_ERROR);
 		return -1;
 	}
@@ -114,7 +114,7 @@ int ecafe_request_poweroff(struct request *req, struct response *res)
 	if (req == NULL || res == NULL)
 		return -1;
 
-	if(system("shutdown -f") == -1) {
+	if(system_linux_poweroff() == -1) {
 		response_status_set(res, RES_STATUS_ERROR);
 		return -1;
 	}

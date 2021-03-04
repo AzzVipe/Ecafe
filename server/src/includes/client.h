@@ -36,7 +36,7 @@ struct client {
 int clients_init(void);
 void client_add(struct client *temp);
 int client_remove(int id);
-int client_is_dead(fd_set *rset);
+int client_is_dead(fd_set *rset, fd_set *allset);
 struct client *client_get(int id);
 int client_getall(struct client ***clients);
 void client_dump(struct client *temp);
