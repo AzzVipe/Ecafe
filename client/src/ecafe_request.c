@@ -3,6 +3,8 @@
 #define BLOCK   "block"
 #define UNBLOCK "unblock"
 
+#define IMG_ADDR "/tmp/ecafe_screenshot.jpeg"
+
 /** TODO : 
  * 1. ecafe_request_linux.c 
  * 2. system_linux functions
@@ -86,6 +88,11 @@ int ecafe_request_message(struct request *req, struct response *res)
 	
 	fprintf(stderr, "Message from Server : %s\n", msg);
 
+	if (system_linux_notify("Message from Server", msg) == -1) {
+		response_status_set(res, RES_STATUS_ERROR);		
+		return -1;
+	}
+
 	response_status_set(res, RES_STATUS_OK);
 
 	return 0;
@@ -133,7 +140,7 @@ int ecafe_request_getdetails(struct request *req, struct response *res)
 
 	if (gethostname(hostname, 1024) == -1) {
 			strcpy(hostname, "*");
-		}
+	}
 
 	if (response_record_keyval_set(res, 0, "hostname", hostname) == -1) {
 		fprintf(stderr, "response_record_keyval_set : error\n");
@@ -157,10 +164,42 @@ int ecafe_request_getdetails(struct request *req, struct response *res)
 	return 0;
 }
 
+int ecafe_request_screenshot(struct request *req, struct response *res)
+{
+	int imgp, img_size;
+	char buf[1024 * 200];
+
+	if (req == NULL || res == NULL)
+		return -1;
+
+	if(system_linux_screenshot(IMG_ADDR) == -1) {
+		response_status_set(res, RES_STATUS_ERROR);
+		return -1;
+	}
+
+	if ((imgp = open(IMG_ADDR, O_RDONLY)) == -1) {
+		response_status_set(res, RES_STATUS_ERROR);
+		return -1;
+	}
+
+	if ((img_size = read(imgp, buf, sizeof(buf))) == -1) {
+		perror("test_response_parse_binary error");
+
+		return -1;
+	}
+
+	printf("Image size : %d\n", img_size);
+
+	response_status_set(res, RES_STATUS_DATA);
+	response_body_binary_set(res, (u_int8_t *) buf, img_size);
+
+	return 0;
+}
+
 int ecafe_response_send(int client, struct response *res)
 {
 	int nbytes;
-	char buf[1024];
+	char buf[1024 * 1000]; /* 1 MB */
 
 	if ((nbytes = response_prepare(res, buf, sizeof(buf))) == -1) {
 		fprintf(stderr, "response_prepare error \n");
@@ -168,7 +207,8 @@ int ecafe_response_send(int client, struct response *res)
 	}
 
 	buf[nbytes] = 0;
-	puts(buf); 
+	// puts(buf);
+	fprintf(stderr, "Size : %d\n", nbytes);
 
 	if ((nbytes = write(client, buf, nbytes)) == -1) {
 		perror("write error");

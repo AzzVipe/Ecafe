@@ -11,6 +11,7 @@
 #define RES_MAX_PAYLOAD_LEN		  	  2048 /* Max len of response body */
 #define RES_MAX_RECORD_LEN		  		20 /* Max len of records       */
 #define RES_MAX_KEYVAL_LEN		  		20 /* Max len of key val       */
+#define RES_HEADER_DELIM		  		':' /* Max len of key val       */
 
 #define RES_STATUS_DATA			 		100
 #define RES_STATUS_OK  			 		200
@@ -32,6 +33,7 @@
 #define RES_STATUS_ERROR_TOOMANY_MSG	"Too Many Requests"
 #define RES_STATUS_INTERNAL_MSG			"Internal Server Error"
 
+#define RES_HEADER_BINARY_VALUE  		"application/octet"
 
 struct keyval {
 	char *key;
@@ -50,11 +52,16 @@ struct response {
 	char 			*header_values[RES_MAX_PARAM_LEN];
 
 	struct record 	records[RES_MAX_RECORD_LEN];
-	char 			*body;
+	u_int8_t 		*body;
 	size_t 			bodylen;
 	int				nrecords;
 	int				nheader;
+	int 			isbinary;
 };
+
+void response_header_set(struct response *res, const char *key, const char *value);
+char *response_header_get(struct response *res, const char *key);
+size_t response_header_size(struct response *res);
 
 int response_status_get(struct response *res);
 int response_status_set(struct response *res, int code);
@@ -71,6 +78,7 @@ char *response_keyval_get(struct record *rec, const char *key);
 int response_record_push(struct response *res, struct record *rec);
 int response_prepare(struct response *res, char *buf, size_t size);
 int response_parse(char *buf, size_t size, struct response *res);
+void response_body_binary_set(struct response *res, u_int8_t *buf, size_t buflen);
 
 /**
  * Get the response status message form res if non-null otherwise use the

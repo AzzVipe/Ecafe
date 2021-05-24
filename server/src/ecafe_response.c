@@ -3,19 +3,21 @@
 int ecafe_response_recv(int client, struct response *res)
 {
 	int nbytes = 0;
-	char buf[BUFSIZE];
+	char buf[1024 * 1000];
 
-	if ((nbytes = read(client, buf, BUFSIZE)) == -1) {
+	if ((nbytes = read(client, buf, sizeof(buf))) == -1) {
 		perror("read error");
 		return -1;
 	}
+
+	printf("Size : %d \n", nbytes);
 
 	if (nbytes == 0) {
 		fprintf(stderr, "Client Terminated \n");
 		return 0;
 	}
 
-	if(response_parse(buf, nbytes, res) != 0) {
+	if(response_parse(buf, nbytes, res) == -1) {
 		fprintf(stderr, "response_parse : error\n");
 		return -1;
 	}
@@ -110,8 +112,30 @@ int ecafe_response_getdetails(struct response *res, struct client *cli_info)
 	hostname = response_keyval_get(&(res->records[0]), "hostname");
 	pid      = response_keyval_get(&res->records[1], "pid");
 
+	fprintf(stderr, "Pid : %p\n", pid);
+
 	cli_info->name = hostname;
-	cli_info->pid = atoi(pid);
+	cli_info->pid = 0;
 	
+	if (pid)
+		cli_info->pid = atoi(pid);
+
+
+	return 0;
+}
+
+int ecafe_response_screenshot(struct response *res)
+{
+	int imgfd;
+
+	if ((imgfd = open("/home/azzvipe/Desktop/image.jpeg", O_CREAT | O_RDWR)) == -1) {
+		perror("ecafe_response_screenshot error");
+
+		return -1;
+	}
+
+	write(imgfd, res->body, res->bodylen);
+
+	close(imgfd);
 	return 0;
 }

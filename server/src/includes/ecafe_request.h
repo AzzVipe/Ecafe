@@ -22,6 +22,7 @@ int ecafe_request_action(struct request *req);
 int ecafe_request_message(struct request *req);
 int ecafe_request_ping(struct request *req);
 int ecafe_request_poweroff(struct request *req);
+int ecafe_request_screenshot(struct request *req);
 int ecafe_request_getdetails(struct request *req);
 
 // int ecafe_request_handle(char *buf, int client);

@@ -1,5 +1,7 @@
-#include <ecafe_request.h>
+#include <ecafe.h>
 #include <sock_lib.h>
+
+static void client_init(void);
 
 int main(int argc, char *argv[])
 {
@@ -18,6 +20,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Error: Tcp_connect\n");
 		exit(1);
 	}
+
+	client_init();
 
 	FD_ZERO(&rset);
 
@@ -51,4 +55,9 @@ int main(int argc, char *argv[])
 	}
 
 	return 0;
+}
+
+static void client_init(void)
+{
+	
 }

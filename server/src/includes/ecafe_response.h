@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <request.h>
 #include <easyio.h>
 #include <response.h>
@@ -22,6 +23,7 @@ int ecafe_response_action(struct response *res);
 int ecafe_response_message(struct response *res);
 int ecafe_response_ping(struct response *res);
 int ecafe_response_poweroff(struct response *res);
+int ecafe_response_screenshot(struct response *res);
 int ecafe_response_getdetails(struct response *res, struct client *cli_info);
 
 #endif

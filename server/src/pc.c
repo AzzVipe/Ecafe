@@ -14,6 +14,7 @@ int		page_pc_unlock(struct http_request *);
 int		page_pc_message(struct http_request *);
 int		page_pc_ping(struct http_request *);
 int		page_pc_action(struct http_request *);
+int		page_pc_screenshot(struct http_request *);
 int		page_pc_poweroff(struct http_request *);
 
 int
@@ -196,6 +197,28 @@ page_pc_poweroff(struct http_request *req)
 	}
 	if (ecafe_poweroff(&ecafe_req) == -1) {
 		kore_log(LOG_ERR, "Failed to process power off request");
+		res = res_error;
+	}
+
+	http_response(req, HTTP_STATUS_OK, res, strlen(res));
+
+	return (KORE_RESULT_OK);
+}
+
+int
+page_pc_screenshot(struct http_request *req)
+{
+	struct request ecafe_req = {0};
+	char *res_error = "{\"message\": \"Failed to send screenshot request\"}";
+	char *res = "{\"message\": \"screenshot reply came back from cleint\"}";
+
+	request_uri_set(&ecafe_req, "/screenshot");
+	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
+		http_response(req, 400, NULL, 0);
+		return (KORE_RESULT_OK);
+	}
+	if (ecafe_screenshot(&ecafe_req) == -1) {
+		kore_log(LOG_ERR, "Failed to process screenshot request");
 		res = res_error;
 	}
 
