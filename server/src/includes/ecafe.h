@@ -69,5 +69,6 @@ int ecafe_poweroff(struct request *req);
 int ecafe_action(struct request *req);
 int ecafe_getdetails(struct client *cli_info);
 int ecafe_clientall(struct client ***clients);
+int ecafe_screenshot(struct request *req);
 
 #endif

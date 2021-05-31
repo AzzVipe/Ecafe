@@ -19,8 +19,36 @@ static const struct {
 };
 
 static int response_iscomplete(const char *buf, size_t size);
+static bool response_extract_key_value(struct response *res, char *line, char delim);
+static bool response_continue_parsing_binary(struct response *res, char *bufptr);
+static ssize_t response_body_append_binary(struct response *res, char *buf, size_t buflen, ssize_t offset);
 
 
+void response_header_set(struct response *res, const char *key, const char *value)
+{
+	if (res->nheader == RES_MAX_PARAM_LEN - 1)
+		return;
+
+	res->header_keys[res->nheader] 		= strdup(key);
+	res->header_values[res->nheader++] 	= strdup(value);
+}
+
+char *response_header_get(struct response *res, const char *key)
+{
+	size_t len = response_header_size(res);
+
+	for (int i = 0; i < (int) len; ++i) {
+		if (strcmp(res->header_keys[i], key) == 0)
+			return res->header_values[i];
+	}
+
+	return NULL; /* Not found */
+}
+
+size_t response_header_size(struct response *res)
+{
+	return res->nheader;
+}
 
 int response_status_get(struct response *res)
 {
@@ -39,6 +67,7 @@ int response_status_set(struct response *res, int code)
 	res->msg = response_status_msg_get(res);
 	return 0;
 }
+
 
 bool response_status_isvalid(int code)
 {
@@ -123,6 +152,7 @@ int response_record_push(struct response *res, struct record *rec)
 	return 0;
 }
 
+
 int response_prepare(struct response *res, char *buf, size_t size)
 {
 	char *ptr;
@@ -139,6 +169,40 @@ int response_prepare(struct response *res, char *buf, size_t size)
 	/* Prepare response header which consists of two part
 	 * <code> <message> */
 	bufi = sprintf(buf, "%d %s\r\n", st, res->msg);
+
+	/* Constructing headers */
+	for (int i = 0, hsize = response_header_size(res);
+			i < hsize && bufi < size; ++i) {
+		/* Copy header keys */
+		ptr = res->header_keys[i];
+		while (*ptr && bufi < size)
+			buf[bufi++] = *ptr++;
+
+		if (bufi < size) buf[bufi++] = ':';
+		if (bufi < size) buf[bufi++] = ' ';
+
+		/* Copy header values */
+		ptr = res->header_values[i];
+		while (*ptr && bufi < size)
+			buf[bufi++] = *ptr++;
+
+		if (bufi < size)
+			buf[bufi++] = '\r';
+		if (bufi < size)
+			buf[bufi++] = '\n';
+	}
+	if (res->isbinary) {
+		int nbytes = sprintf(buf + bufi, "content-len: %lu\r\n", res->bodylen);
+		bufi += nbytes;
+	}
+
+	/* Marking header end and starting of response body */
+	if (bufi < size) buf[bufi++] = '\r';
+	if (bufi < size) buf[bufi++] = '\n';
+
+	if (res->isbinary) {
+		return response_body_append_binary(res, buf, size, bufi);
+	}
 
 	/* Now status is 100 therefore we need to add the response data in buf */
 	nrecords = res->nrecords;
@@ -185,10 +249,11 @@ int response_prepare(struct response *res, char *buf, size_t size)
 	return bufi >= size? -1 : (int) bufi;
 }
 
+
 int response_parse(char *buf, size_t size, struct response *res)
 {
 	int ret = 0;
-	char *key, *val, *ptr, *last, *bufcp;
+	char *key, *val, *ptr, *prev, *last, *bufcp, header_line[512];
 	struct record rec = {0};
 
 	buf[size] = 0;
@@ -196,23 +261,50 @@ int response_parse(char *buf, size_t size, struct response *res)
 	last = &bufcp[size - 1];
 	if (!bufcp)
 		return -1;
-	/* Check response received is complete */
-	if (!response_iscomplete(bufcp, size))
-		return -1;
-	/* Extract header */
+	
+	/* Extract status code */
 	if ((ptr = strchr(bufcp, ' ')) == NULL) {
 		fprintf(stderr, "response_parse: no response status code found\n");
 		return -1;
 	}
 	res->status = atoi(bufcp);
 	res->msg = response_status_msg_get(res);
-	ptr = strchr(ptr, '\n');
-	++ptr;
+	ptr = strchr(ptr, '\r');
+
+	// Check eampty header
+	if (ptr && (strncmp(ptr, "\r\n\r\n", 4) == 0)) {
+		ptr += 4;
+	} else if (ptr) {
+		/* Extract headers */
+		ptr += 2;
+		prev = ptr;
+		while (1) {
+			ptr = strchr(ptr, '\r');
+			if (ptr && (strncmp(ptr, "\r\n\r\n", 4) == 0)) {
+				strncpy(header_line, prev, ptr - prev);
+				response_extract_key_value(res, header_line, RES_HEADER_DELIM);
+				break;
+			}
+			strncpy(header_line, prev, ptr - prev);
+			response_extract_key_value(res, header_line, RES_HEADER_DELIM);
+			ptr += 2;
+			prev = ptr;
+		}
+	}
 
 	/* If current and next char is '\r' and '\n' respectively then we have
 	 * reached end of record */
 	if (ptr < last && *ptr == '\r' && *(ptr + 1) == '\n')
 		ptr = last;
+
+	/* If response body has binary data then call binary body parser */
+	if (response_header_get(res, "content-type") &&
+		(strcmp(response_header_get(res, "content-type"), RES_HEADER_BINARY_VALUE) == 0))
+			return response_continue_parsing_binary(res, ptr);
+
+	/* Check response received is complete */
+	if (!response_iscomplete(bufcp, size))
+		return -1;
 
 	/* Extracting records */
 	while (ptr < last) {
@@ -261,28 +353,6 @@ int response_parse(char *buf, size_t size, struct response *res)
 
 	return ret;
 }
-
-
-static int response_iscomplete(const char *buf, size_t size)
-{
-	/* If size is less than 4 than EOR marker is missing
-	 * that is '\r\n\r\n' */
-	if (size < 4)
-		return 0;
-	if (buf[size - 1] != '\n'
-			|| buf[size - 2] != '\r'
-			|| buf[size - 3] != '\n'
-			|| buf[size - 4] != '\r')
-		return 0;
-
-	return 1;
-}
-
-
-
-
-
-
 
 
 char *response_status_msg_get(struct response *res)
@@ -339,5 +409,89 @@ void response_dump(struct response *res)
 	fprintf(stderr, "}\n");
 }
 
+void response_body_binary_set(struct response *res, u_int8_t *buf, size_t buflen)
+{
+	res->isbinary = 1;
+
+	response_header_set(res, "content-type", RES_HEADER_BINARY_VALUE);
+
+	if ((res->body = malloc(buflen)) == NULL) {
+		perror("response_body_binary_set error");
+		return;
+	}
+
+	memcpy(res->body, buf, buflen);
+
+	res->bodylen = buflen;
+
+}
 
 
+
+static bool response_extract_key_value(struct response *res, char *line, char delim)
+{
+	char *p;
+
+	if ((p = strchr(line, delim)) == NULL)
+		return false;
+
+	*p = 0;
+	if (delim == RES_HEADER_DELIM) {
+		str_trim(line);
+		str_trim(p + 1);
+		response_header_set(res, line, p + 1);
+		*p = RES_HEADER_DELIM;
+	} 
+
+	return true;
+}
+
+static bool response_continue_parsing_binary(struct response *res, char *bufptr)
+{
+	const char *content_lens;
+	int content_len;
+
+	content_lens = response_header_get(res, "content-len");
+	if (!content_lens) {
+		fprintf(stderr, "response_continue_parsing_binary: no content length header found\n");
+		return false;
+	}
+
+	content_len = atoi(content_lens);
+	res->isbinary = 1;
+	res->bodylen  = content_len;
+
+	if (!(res->body = malloc(content_len))) {
+		perror("response_continue_parsing_binary");
+		return false;
+	}
+
+	memcpy(res->body, bufptr, content_len);
+
+	return true;
+}
+
+static int response_iscomplete(const char *buf, size_t size)
+{
+	/* If size is less than 4 than EOR marker is missing
+	 * that is '\r\n\r\n' */
+	if (size < 4)
+		return 0;
+	if (buf[size - 1] != '\n'
+			|| buf[size - 2] != '\r'
+			|| buf[size - 3] != '\n'
+			|| buf[size - 4] != '\r')
+		return 0;
+
+	return 1;
+}
+
+static ssize_t response_body_append_binary(struct response *res, char *buf, size_t buflen, ssize_t offset)
+{
+	if (res->bodylen > (buflen - offset))
+		return -1;
+
+	memcpy(buf + offset, res->body, res->bodylen);
+
+	return res->bodylen + offset;
+}

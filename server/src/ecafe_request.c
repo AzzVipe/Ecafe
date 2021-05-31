@@ -76,6 +76,17 @@ int ecafe_request_action(struct request *req)
 	return 0;
 }
 
+int ecafe_request_screenshot(struct request *req)
+{
+	char uri[] = "/screenshot";
+
+	request_type_set(req, REQ_TYPE_POST);
+	request_uri_set(req, uri);
+
+	return 0;
+
+}
+
 int ecafe_request_send(int client, struct request *req)
 {
 	int nbytes;

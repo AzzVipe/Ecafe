@@ -5,3 +5,7 @@
 * `ecafe_ping` - Ping client
 * `ecafe_action` - Perform action on client
 * `ecafe_poweroff` - Poweroff client system
+
+## Dependencies
+* `notify-send` - pamac install 
+* `imagemagick` - pamac install imagemagick
