@@ -226,7 +226,35 @@ int ecafe_getdetails(struct client *cli_info)
 	return 0;
 }
 
+int ecafe_notification(struct request *req)
+{	
+	int id, rv;
+	struct client *temp;
+	struct response res = {0};
+
+	id = atoi(request_param_get(req, "id"));
+	temp = client_get(id);
+
+	if (ecafe_request_notification(req) == -1)
+		return -1;
+
+	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
+		return -1;
+	}
+
+	if ((rv = ecafe_response_recv(temp->fd, &res)) == 0) {
+		return -2;
+	} else if (rv == -1) {
+		return -1;
+	}
+
+	ecafe_response_notification(&res);
+
+	return 0;
+}
+
 int ecafe_clientall(struct client ***clients)
 {
 	return client_getall(clients);
 }
+

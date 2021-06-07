@@ -84,7 +84,16 @@ int ecafe_request_screenshot(struct request *req)
 	request_uri_set(req, uri);
 
 	return 0;
+}
 
+int ecafe_request_notification(struct request *req)
+{
+	char uri[] = "/notification";
+
+	request_type_set(req, REQ_TYPE_POST);
+	request_uri_set(req, uri);
+
+	return 0;
 }
 
 int ecafe_request_send(int client, struct request *req)

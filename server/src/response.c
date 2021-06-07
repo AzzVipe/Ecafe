@@ -253,21 +253,20 @@ int response_prepare(struct response *res, char *buf, size_t size)
 int response_parse(char *buf, size_t size, struct response *res)
 {
 	int ret = 0;
-	char *key, *val, *ptr, *prev, *last, *bufcp, header_line[512];
+	char *key, *val, *ptr, *prev, *last, header_line[512];
 	struct record rec = {0};
 
 	buf[size] = 0;
-	bufcp = strndup(buf, size);
-	last = &bufcp[size - 1];
-	if (!bufcp)
+	last = &buf[size - 1];
+	if (!buf)
 		return -1;
 	
 	/* Extract status code */
-	if ((ptr = strchr(bufcp, ' ')) == NULL) {
+	if ((ptr = strchr(buf, ' ')) == NULL) {
 		fprintf(stderr, "response_parse: no response status code found\n");
 		return -1;
 	}
-	res->status = atoi(bufcp);
+	res->status = atoi(buf);
 	res->msg = response_status_msg_get(res);
 	ptr = strchr(ptr, '\r');
 
@@ -299,11 +298,14 @@ int response_parse(char *buf, size_t size, struct response *res)
 
 	/* If response body has binary data then call binary body parser */
 	if (response_header_get(res, "content-type") &&
-		(strcmp(response_header_get(res, "content-type"), RES_HEADER_BINARY_VALUE) == 0))
+		(strcmp(response_header_get(res, "content-type"), RES_HEADER_BINARY_VALUE) == 0)) {
+			ptr = strchr(prev, '\r');
+			ptr = ptr + 4;
 			return response_continue_parsing_binary(res, ptr);
+		}
 
 	/* Check response received is complete */
-	if (!response_iscomplete(bufcp, size))
+	if (!response_iscomplete(buf, size))
 		return -1;
 
 	/* Extracting records */
@@ -349,7 +351,6 @@ int response_parse(char *buf, size_t size, struct response *res)
 		if (ptr < last && *ptr == '\r' && *(ptr + 1) == '\n')
 			break;
 	}
-	free(bufcp);
 
 	return ret;
 }

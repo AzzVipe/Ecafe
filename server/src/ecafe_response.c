@@ -3,7 +3,10 @@
 int ecafe_response_recv(int client, struct response *res)
 {
 	int nbytes = 0;
-	char buf[1024 * 1000];
+	char buf[1024 * 1024];
+
+	// while((nbytes += read(client, (buf + nbytes), sizeof(buf))) > 0)
+	// 	; // empty body
 
 	if ((nbytes = read(client, buf, sizeof(buf))) == -1) {
 		perror("read error");
@@ -21,6 +24,8 @@ int ecafe_response_recv(int client, struct response *res)
 		fprintf(stderr, "response_parse : error\n");
 		return -1;
 	}
+
+	
 
 	return nbytes;
 }
@@ -128,14 +133,24 @@ int ecafe_response_screenshot(struct response *res)
 {
 	int imgfd;
 
-	if ((imgfd = open("/home/azzvipe/Desktop/image.jpeg", O_CREAT | O_RDWR)) == -1) {
+	if ((imgfd = open("/tmp/ecafe_image_out.jpeg", O_CREAT | O_RDWR | O_TRUNC, 0664)) == -1) {
 		perror("ecafe_response_screenshot error");
 
 		return -1;
 	}
 
 	write(imgfd, res->body, res->bodylen);
+	printf("ECAFE: bodylen %lu\n", res->bodylen);
+	printf("ECAFE: %16s\n", res->body);
 
 	close(imgfd);
+	return 0;
+}
+
+int ecafe_response_notification(struct response *res)
+{
+	if (ecafe_response_print(res, stderr) == -1)
+		return -1;
+
 	return 0;
 }

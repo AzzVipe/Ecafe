@@ -1,7 +1,8 @@
 #include <ecafe_request.h>
 
-#define BLOCK   "block"
-#define UNBLOCK "unblock"
+#define APP_NAME "Ecafe"
+#define BLOCK    "block"
+#define UNBLOCK  "unblock"
 
 #define IMG_ADDR "/tmp/ecafe_screenshot.jpeg"
 
@@ -188,7 +189,7 @@ int ecafe_request_screenshot(struct request *req, struct response *res)
 		return -1;
 	}
 
-	printf("Image size : %d\n", img_size);
+	// printf("Image size : %d\n", img_size);
 
 	response_status_set(res, RES_STATUS_DATA);
 	response_body_binary_set(res, (u_int8_t *) buf, img_size);
@@ -196,10 +197,31 @@ int ecafe_request_screenshot(struct request *req, struct response *res)
 	return 0;
 }
 
+int ecafe_request_notification(struct request *req, struct response *res)
+{
+	char *notification;
+
+	if (req == NULL || res == NULL)
+		return -1;
+
+	if((notification = request_param_get(req, PARAM_NOTIFICATION)) == NULL) {
+		response_status_set(res, RES_STATUS_ERROR);		
+		return -1;
+	}
+
+	if(system_linux_notify(APP_NAME, notification) == -1) {
+		response_status_set(res, RES_STATUS_ERROR);
+		return -1;
+	}
+	response_status_set(res, RES_STATUS_CREATED);
+
+	return 0;
+}
+
 int ecafe_response_send(int client, struct response *res)
 {
 	int nbytes;
-	char buf[1024 * 1000]; /* 1 MB */
+	char buf[1024 * 1024]; /* 10 MB */
 
 	if ((nbytes = response_prepare(res, buf, sizeof(buf))) == -1) {
 		fprintf(stderr, "response_prepare error \n");
@@ -208,7 +230,8 @@ int ecafe_response_send(int client, struct response *res)
 
 	buf[nbytes] = 0;
 	// puts(buf);
-	fprintf(stderr, "Size : %d\n", nbytes);
+	// fprintf(stderr, "ECAFE: %16s", buf);
+	// fprintf(stderr, "Size : %d\n", nbytes);
 
 	if ((nbytes = write(client, buf, nbytes)) == -1) {
 		perror("write error");

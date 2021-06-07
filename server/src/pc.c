@@ -7,6 +7,7 @@
 #include <client.h>
 
 static int	prepare_ecafe_request(struct http_request *, struct request *);
+static void get_file_content(const char *filepath, struct kore_buf *result);
 int		page_pc_index(struct http_request *);
 int		page_pc_show(struct http_request *);
 int		page_pc_lock(struct http_request *);
@@ -15,6 +16,7 @@ int		page_pc_message(struct http_request *);
 int		page_pc_ping(struct http_request *);
 int		page_pc_action(struct http_request *);
 int		page_pc_screenshot(struct http_request *);
+int		page_pc_notification(struct http_request *);
 int		page_pc_poweroff(struct http_request *);
 
 int
@@ -208,9 +210,9 @@ page_pc_poweroff(struct http_request *req)
 int
 page_pc_screenshot(struct http_request *req)
 {
+	struct kore_buf *result = NULL;
 	struct request ecafe_req = {0};
 	char *res_error = "{\"message\": \"Failed to send screenshot request\"}";
-	char *res = "{\"message\": \"screenshot reply came back from cleint\"}";
 
 	request_uri_set(&ecafe_req, "/screenshot");
 	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
@@ -218,7 +220,46 @@ page_pc_screenshot(struct http_request *req)
 		return (KORE_RESULT_OK);
 	}
 	if (ecafe_screenshot(&ecafe_req) == -1) {
+		http_response(req, HTTP_STATUS_OK, res_error, strlen(res_error));
 		kore_log(LOG_ERR, "Failed to process screenshot request");
+		goto cleanup;
+	}
+
+	result = kore_buf_alloc(1024 * 1024);
+	get_file_content("/tmp/ecafe_image_out.jpeg", result);
+
+	http_response_header(req, "content-type", "image/jpeg");
+	http_response(req, HTTP_STATUS_OK, result->data, result->offset);
+
+cleanup:
+	if (result) kore_buf_free(result);
+
+	return (KORE_RESULT_OK);
+}
+
+int
+page_pc_notification(struct http_request *req)
+{
+	char *notification = NULL;
+	struct request ecafe_req = {0};
+	char *res_error = "{\"message\": \"Failed to send message\"}";
+	char *res = "{\"message\": \"message sent successfully\"}";
+
+	request_uri_set(&ecafe_req, "/notification");
+	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
+		http_response(req, 400, NULL, 0);
+		return (KORE_RESULT_OK);
+	}
+	http_argument_get_string(req, "notification", &notification);
+	if (notification == NULL) {
+		http_response(req, 400, NULL, 0);
+		return (KORE_RESULT_OK);
+	}
+	request_param_set(&ecafe_req, "notification", notification);
+
+
+	if (ecafe_notification(&ecafe_req) == -1) {
+		kore_log(LOG_ERR, "Failed to process 'send message' request");
 		res = res_error;
 	}
 
@@ -226,6 +267,7 @@ page_pc_screenshot(struct http_request *req)
 
 	return (KORE_RESULT_OK);
 }
+
 
 int
 prepare_ecafe_request(struct http_request *req, struct request *ecafe_req)
@@ -242,4 +284,20 @@ prepare_ecafe_request(struct http_request *req, struct request *ecafe_req)
 	request_param_set(ecafe_req, "id", ids);
 
 	return 0;
+}
+
+static void
+get_file_content(const char *filepath, struct kore_buf *result)
+{
+	int fd;
+	char buf[BUFSIZ];
+	ssize_t nbytes;
+
+	if ((fd = open(filepath, O_RDONLY)) == -1)
+		return;
+
+	while ((nbytes = read(fd, buf, sizeof(buf))) > 0)
+		kore_buf_append(result, buf, nbytes);
+
+	close(fd);
 }

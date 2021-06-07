@@ -24,6 +24,7 @@ int ecafe_response_message(struct response *res);
 int ecafe_response_ping(struct response *res);
 int ecafe_response_poweroff(struct response *res);
 int ecafe_response_screenshot(struct response *res);
+int ecafe_response_notification(struct response *res);
 int ecafe_response_getdetails(struct response *res, struct client *cli_info);
 
 #endif
