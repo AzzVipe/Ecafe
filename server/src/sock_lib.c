@@ -90,7 +90,7 @@ static void server_iomux(
 
 static int tcp_listen(const char *host, const char *service, socklen_t *addrlen)
 {
-	int listenfd, n;
+	int listenfd, n, option = 1;
 	struct addrinfo hints, *res, *ressave;
 
 	memset(&hints, 0, sizeof(hints));
@@ -109,6 +109,7 @@ static int tcp_listen(const char *host, const char *service, socklen_t *addrlen)
 		listenfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 		if (listenfd < 0)
 			continue; /* ignore */
+		setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 
 		if (bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
 			break; /* success */

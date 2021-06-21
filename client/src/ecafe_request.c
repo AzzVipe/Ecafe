@@ -16,10 +16,10 @@ int ecafe_request_lock(struct request *req, struct response *res)
 	if (req == NULL || res == NULL)
 		return -1;
 
-	if(system_linux_lock() == -1) {
-		response_status_set(res, RES_STATUS_ERROR);
-		return -1;
-	}
+	// if(system_linux_lock() == -1) {
+	// 	response_status_set(res, RES_STATUS_ERROR);
+	// 	return -1;
+	// }
 	response_status_set(res, RES_STATUS_CREATED);
 
 	return 0;
@@ -218,7 +218,7 @@ int ecafe_request_notification(struct request *req, struct response *res)
 	return 0;
 }
 
-int ecafe_response_send(int client, struct response *res)
+int ecafe_response_send(struct response *res, int connfd)
 {
 	int nbytes;
 	char buf[1024 * 1024]; /* 10 MB */
@@ -229,11 +229,11 @@ int ecafe_response_send(int client, struct response *res)
 	}
 
 	buf[nbytes] = 0;
-	// puts(buf);
+	puts(buf);
 	// fprintf(stderr, "ECAFE: %16s", buf);
-	// fprintf(stderr, "Size : %d\n", nbytes);
+	fprintf(stderr, "Size : %d\n", nbytes);
 
-	if ((nbytes = write(client, buf, nbytes)) == -1) {
+	if ((nbytes = write(connfd, buf, nbytes)) == -1) {
 		perror("write error");
 		return -1;
 	}

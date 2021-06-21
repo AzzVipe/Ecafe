@@ -29,7 +29,7 @@ int ecafe_request_getdetails(struct request *req, struct response *res);
 int ecafe_request_screenshot(struct request *req, struct response *res);
 int ecafe_request_notification(struct request *req, struct response *res);
 
-int ecafe_response_send(int client, struct response *res);
+int ecafe_response_send(struct response *res, int connfd);
 
 
 

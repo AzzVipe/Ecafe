@@ -1,31 +1,47 @@
 #include <ecafe_response.h>
 
-int ecafe_response_recv(int client, struct response *res)
+int ecafe_response_send(struct response *res, int connfd)
 {
-	int nbytes = 0;
-	char buf[1024 * 1024];
+	int nbytes = 0, rv = 0;
+	char buf[1024 * 10];
 
-	// while((nbytes += read(client, (buf + nbytes), sizeof(buf))) > 0)
-	// 	; // empty body
-
-	if ((nbytes = read(client, buf, sizeof(buf))) == -1) {
-		perror("read error");
-		return -1;
-	}
-
-	printf("Size : %d \n", nbytes);
-
-	if (nbytes == 0) {
-		fprintf(stderr, "Client Terminated \n");
-		return 0;
-	}
-
-	if(response_parse(buf, nbytes, res) == -1) {
+	if((nbytes = response_prepare(res, buf, sizeof(buf))) == -1) {
 		fprintf(stderr, "response_parse : error\n");
 		return -1;
 	}
 
+	puts(buf);
+
+	if ((rv = write(connfd, buf, nbytes)) == -1) {
+		perror("write error");
+		return -1;
+	}
 	
+	if (rv != nbytes)
+		return -1;
+
+	return nbytes;
+}
+
+int ecafe_response_recv(int connfd, struct response *res)
+{
+	int nbytes = 0, rv = 0;
+	char buf[1024 * 10];
+
+	if ((nbytes = read(connfd, buf, sizeof(buf))) == -1) {
+		perror("read error");
+		return -1;
+	}
+	
+	if (nbytes == 0)
+		return 0;
+	
+	puts(buf);
+
+	if((rv = response_parse(buf, nbytes, res)) == -1) {
+		fprintf(stderr, "response_parse : error\n");
+		return -1;
+	}
 
 	return nbytes;
 }
@@ -107,8 +123,9 @@ int ecafe_response_poweroff(struct response *res)
 	return 0;
 }
 
-int ecafe_response_getdetails(struct response *res, struct client *cli_info)
+int ecafe_response_getdetails(struct response *res, int connfd)
 {
+	struct client *client;
 	char *hostname, *pid;
 
 	if (ecafe_response_print(res, stderr) == -1)
@@ -117,19 +134,16 @@ int ecafe_response_getdetails(struct response *res, struct client *cli_info)
 	hostname = response_keyval_get(&(res->records[0]), "hostname");
 	pid      = response_keyval_get(&res->records[1], "pid");
 
-	fprintf(stderr, "Pid : %p\n", pid);
+	client = client_active_get();
 
-	cli_info->name = hostname;
-	cli_info->pid = 0;
-	
-	if (pid)
-		cli_info->pid = atoi(pid);
+	client->name = strdup(hostname);
+	client->pid = atoi(pid);
 
 
 	return 0;
 }
 
-int ecafe_response_screenshot(struct response *res)
+int ecafe_response_screenshot(struct response *res, int connfd)
 {
 	int imgfd;
 

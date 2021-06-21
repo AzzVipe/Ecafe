@@ -1,5 +1,3 @@
-#include <pthread.h>
-
 #include "sock_lib.h"
 #include "ecafe.h"
 #include "browser.h"
@@ -7,79 +5,89 @@
 
 #undef SERVER_PORT
 #define SERVER_PORT "3030"
+#define SERVER_PORT2 "4040"
 
-static pthread_t tid;
-static int has_app_started;
+static struct client temp = {0}, **client_array;
+static struct sockaddr_in cliaddr, servaddr;
 
-static void ecafe_server_start(void);
-static void *start_thread(void *arg);
-
-void start_app(void)
+int main(void)
 {
-	if (!has_app_started) {
-		pthread_create(&tid, NULL, start_thread, NULL);
-		pthread_detach(tid);
-		has_app_started = 1;
-	}
-}
-
-static void *start_thread(void *arg)
-{
-	ecafe_server_start();
-
-	return NULL;
-}
-
-static void ecafe_server_start(void)
-{
-	int listenfd, connfd, maxfd;
-	int nclients = 0, id = 0, nready;
+	int rv = 0;
+	char buf[1024];
+	int is_test_server_connected = 0;
+	int c_listenfd, s_listenfd, c_connfd, s_connfd, maxfd; /*s prefix is for server and c prefix is for client*/
+	int nclients = 0, id = 0, nready, nbytes;
 	fd_set allset, rset;
-	socklen_t socklen, cliaddr_len;
-	struct client temp = {0}, **client_array;
-	struct sockaddr_in cliaddr;
+	socklen_t c_socklen,s_socklen, cliaddr_len, servaddr_len;
 
-	listenfd = Tcp_listen("0.0.0.0", SERVER_PORT, &socklen);
+	s_listenfd = Tcp_listen("0.0.0.0", SERVER_PORT2, &s_socklen);
+	c_listenfd = Tcp_listen("0.0.0.0", SERVER_PORT, &c_socklen);
 
-	if (listenfd < 0) {
-		fprintf(stderr, "Tcp_listen : %d Error \n", listenfd);
+	if (s_listenfd < 0 || c_listenfd < 0) {
+		fprintf(stderr, "Tcp_listen : %d %d Error \n", c_listenfd, s_listenfd);
 		exit(-1);
 	}
 
 	FD_ZERO(&allset);
-	FD_SET(listenfd, &allset);
+	FD_SET(s_listenfd, &allset);
+	FD_SET(c_listenfd, &allset);
 
-	maxfd = listenfd;
+	maxfd = max(s_listenfd, c_listenfd);
 
 	clients_init();
+
+	fprintf(stderr, "Server Started....\n");
+
 
 	for (; ;)
 	{
 		rset = allset;
 		nready = select(maxfd + 1, &rset, NULL, NULL, NULL);
 
-		if (FD_ISSET(listenfd, &rset)) {
+		/* Connection request of webserver/server */
+
+		if (FD_ISSET(s_listenfd, &rset)) {
+			// if (is_test_server_connected == 1) 
+			// 	continue;
+
+			servaddr_len = sizeof(servaddr);
+			if ((s_connfd = accept(s_listenfd, (struct sockaddr *) &servaddr, &servaddr_len)) < 0) {
+				perror("accept error");
+				continue;
+			}
+			FD_SET(s_connfd, &allset);
+
+			if (s_connfd > maxfd)
+				maxfd = s_connfd;
+
+			fprintf(stderr, "Test Server Connected \n");
+			is_test_server_connected = 0;
+			
+			if (--nready == 0)
+				continue;
+		}
+
+		/* Connection requests of clients */
+
+		if (FD_ISSET(c_listenfd, &rset)) {
 			cliaddr_len = sizeof(cliaddr);
-			if ((connfd = accept(listenfd, (struct sockaddr *) &cliaddr, &cliaddr_len)) < 0) {
+			if ((c_connfd = accept(c_listenfd, (struct sockaddr *) &cliaddr, &cliaddr_len)) < 0) {
 				perror("accept error");
 				continue;
 			}
 			nclients++;
 			temp.id = ++id;
-			temp.fd = connfd;
+			temp.fd = c_connfd;
 			// @Danger: Add support for ipv6
 			memcpy(&(temp.addr), &cliaddr, cliaddr_len);
-
-			if (ecafe_getdetails(&temp) == -1) 
-				fprintf(stderr, "ecafe_request_getdetails : error\n");
-
 			client_add(&temp);
-			FD_SET(connfd, &allset);
+			ecafe_getdetails(&temp);
+			
+			FD_SET(c_connfd, &allset);
 
-			if (connfd > maxfd)
-				maxfd = connfd;
+			if (c_connfd > maxfd)
+				maxfd = c_connfd;
 
-			nready--;
 			puts("Client request accepted!");
 
 			if (client_getall(&client_array) != nclients) {
@@ -87,16 +95,56 @@ static void ecafe_server_start(void)
 				continue;
 			}
 
-			for (int i = 0; i < nclients; ++i) {
+			for (int i = 0; i < nclients; ++i) 
 				client_dump(client_array[i]);
-			}
-			if (nready == 0)
+			
+			if (--nready == 0)
 				continue;
 		}
 
-		if (client_is_dead(&rset, &allset) == 0) {  /* @Todo : Fix server infinite loop when client aborts*/
-			nclients--;
+		/* Requests from server */
+
+		if (FD_ISSET(s_connfd, &rset)) {
+
+			// Test server operations
+			if ((nbytes = read(s_connfd, buf, sizeof(buf))) == 0) {
+				fprintf(stderr, "Test Sever %d Terminated\n", s_connfd);
+				close(s_connfd);
+				FD_CLR(s_connfd, &allset);
+				is_test_server_connected = 0;
+
+			} else if (nbytes > 0) {
+				buf[nbytes] = '\0';
+				puts(buf);
+
+				ecafe_request_handle(buf);
+			}
+			nready--;
 		}
 
+		/* Responses from clients */
+
+		for (int i = 0; i < FD_SETSIZE && nready != 0; ++i) {
+			if (FD_ISSET(client_array[i]->fd, &rset)) {
+				client_active_set(client_array[i]);
+				// Client read operations
+				if ((nbytes = read(client_array[i]->fd, buf, sizeof(buf))) == 0) {
+					fprintf(stderr, "Client %d Terminated\n", client_array[i]->id);
+					client_remove(client_array[i]->id);
+					nclients--;
+					close(client_array[i]->fd);
+					FD_CLR(client_array[i]->fd, &allset);
+				} else if (nbytes > 0) {
+					buf[nbytes] = '\0';
+					puts(buf);
+
+					ecafe_response_handle(buf, s_connfd);
+				}
+				
+				nready--;
+			}
+		}
 	}
+
+	return 0;
 }

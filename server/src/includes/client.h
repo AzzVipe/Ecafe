@@ -42,6 +42,10 @@ int client_getall(struct client ***clients);
 void client_dump(struct client *temp);
 char *client_ipstr(struct client *temp);
 
+void client_active_set(struct client *client);
+struct client *client_active_get(void);
+void client_active_unset(void);
+
 
 
 

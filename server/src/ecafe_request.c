@@ -96,10 +96,10 @@ int ecafe_request_notification(struct request *req)
 	return 0;
 }
 
-int ecafe_request_send(int client, struct request *req)
+int ecafe_request_send(struct request *req, int connfd)
 {
 	int nbytes;
-	char buf[1024];
+	char buf[1024 * 10];
 
 	if ((nbytes = request_prepare(req, buf, sizeof(buf))) == -1) {
 		fprintf(stderr, "request_prepare error \n");
@@ -108,28 +108,10 @@ int ecafe_request_send(int client, struct request *req)
 
 	puts(buf);
 
-	if ((nbytes = write(client, buf, nbytes)) == -1) {
+	if ((nbytes = write(connfd, buf, nbytes)) == -1) {
 		perror("write error");
 		return -1;
 	}
 
 	return nbytes;
 }
-
-// int ecafe_request_handle(char *buf, int client)
-// {
-// 	int index;
-	
-// 	if ((index = command_get_index(buf)) == -1) {
-// 		fprintf(stderr, "Invalid command\n");
-// 		return -1;
-// 	}
-
-// 	if (commands[index].req_handle(client) == -1) {
-// 		fprintf(stderr, "ecafe_request_handle error\n");
-// 		return -1;
-// 	}
-
-// 	return 0;
-// }
-

@@ -1,254 +1,100 @@
 #include <sock_lib.h>
 #include <ecafe.h>
+#include <command.h>
 
-int ecafe_lock(struct request *req)
+int ecafe_request_handle(char *buf) /* Handling requests from server */
 {
-	int id, rv;
+	int id, rv, index;
+	char *uri;
+	struct request req = {};
 	struct client *temp;
-	struct response res = {0};
+	
+	if (!request_parse(buf, strlen(buf), &req)) {
+		fprintf(stderr, "ecafe_request_handle/request_parse : error\n");
+		return -1;
+	}
 
-	id = atoi(request_param_get(req, "id"));
+	if ((uri = request_uri_get(&req)) == NULL)
+		return -1;
+
+	request_dump(&req);
+
+	if ((index = command_get_index_by_uri(uri)) == -1) {
+		fprintf(stderr, "command_get_index_by_uri : error\n");
+		return -1;
+	}
+
+	if(commands[index].req_handle(&req) == -1) {
+		fprintf(stderr, "request_handle : error\n");
+		return -1;
+	}
+
+	id = atoi(request_param_get(&req, "id"));
 	temp = client_get(id);
 
 	printf("Id %d\n", id);
 
-	request_dump(req);
-
-	if (ecafe_request_lock(req) == -1) {
-		fprintf(stderr, "ecafe_request_lock : error\n");
-		return -1;
-	}
-
-	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
+	if ((rv = ecafe_request_send(&req, temp->fd)) == -1) { /* Sending request to client for the same */
 		fprintf(stderr, "ecafe_request_send : error\n");
 		return -1;
 	}
 
-	if ((rv = ecafe_response_recv(temp->fd, &res)) == 0) {
-		fprintf(stderr, "ecafe_response_recv : Client Terminated \n");
-		return -2;
-	} else if (rv == -1) {
-		fprintf(stderr, "ecafe_response_recv : error\n");
-		return -1;
-	}
-
-	ecafe_response_lock(&res);
-
 	return 0;
 }
 
-int ecafe_unlock(struct request *req)
+int ecafe_response_handle(char *buf, int connfd) /* Hanlding client responses */
 {
-	int id, rv;
-	struct client *temp;
-	struct response res = {0};
+	char *uri;
+	int index, nbytes, rv;
+	struct response res = {};
 
-	id = atoi(request_param_get(req, "id"));
-	temp = client_get(id);
+	if ((nbytes = response_parse(buf, strlen(buf), &res)) == -1) {
+		fprintf(stderr, "ecafe_response_handle/response_parse error \n");
+		// return -1;
+	}
 
-	puts("OK");
-	if (ecafe_request_unlock(req) == -1) {
-		fprintf(stderr, "ecafe_request_unlock : error\n");
+	response_dump(&res);
+
+	if ((uri = response_header_get(&res, "uri")) == NULL ) {
+		fprintf(stderr, "ecafe_response_handle/response_keyval_get error \n");
 		return -1;
 	}
-	
-	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
+
+	puts(uri);
+
+	if ((index = command_get_index_by_uri(uri)) == -1) {
+		fprintf(stderr, "command_get_index_by_uri : error\n");
+		return -1;
+	}
+
+	if (commands[index].res_handle_special) {
+		return commands[index].res_handle_special(&res, connfd);
+	}
+
+	if(commands[index].res_handle(&res) == -1) {
+		fprintf(stderr, "request_handle : error\n");
+		return -1;
+	}
+
+	if ((rv = ecafe_response_send(&res, connfd)) == -1) { /* Responsing back to server */
 		fprintf(stderr, "ecafe_request_send : error\n");
 		return -1;
 	}
 
-	if ((rv = ecafe_response_recv(temp->fd, &res)) == 0) {
-		return -2;
-	} else if (rv == -1) {
-		return -1;
-	}
-
-	ecafe_response_unlock(&res);
-
 	return 0;
 }
 
-int ecafe_ping(struct request *req)
-{
-	int id, rv;
-	struct client *temp;
-	struct response res = {0};
 
-	id = atoi(request_param_get(req, "id"));
-	temp = client_get(id);
-
-	if (ecafe_request_ping(req) == -1) 
-		return -1;
-
-	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
-		return -1;
-	}
-
-	if ((rv = ecafe_response_recv(temp->fd, &res)) == 0) {
-		return -2;
-	} else if (rv == -1) {
-		return -1;
-	}
-
-	ecafe_response_ping(&res);
-
-	return 0;
-}
-
-int ecafe_message(struct request *req)
-{
-	int id, rv;
-	struct client *temp;
-	struct response res = {0};
-
-	id = atoi(request_param_get(req, "id"));
-	temp = client_get(id);
-
-	if (ecafe_request_message(req) == -1)
-		return -1;
-
-	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
-		return -1;
-	}
-
-	if ((rv = ecafe_response_recv(temp->fd, &res)) == 0) {
-		return -2;
-	} else if (rv == -1) {
-		return -1;
-	}
-
-	ecafe_response_message(&res);
-
-	return 0;
-
-}
-
-int ecafe_action(struct request *req)
-{
-	int id, rv;
-	struct client *temp;
-	struct response res = {0};
-
-	id = atoi(request_param_get(req, "id"));
-	temp = client_get(id);
-
-	if (ecafe_request_action(req) == -1)
-		return -1;
-
-	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
-		return -1;
-	}
-
-	if ((rv = ecafe_response_recv(temp->fd, &res)) == 0) {
-		return -2;
-	} else if (rv == -1) {
-		return -1;
-	}
-
-	ecafe_response_action(&res);
-
-	return 0;
-}
-
-int ecafe_poweroff(struct request *req)
-{
-	int id, rv;
-	struct client *temp;
-	struct response res = {0};
-
-	id = atoi(request_param_get(req, "id"));
-	temp = client_get(id);
-
-	if (ecafe_request_poweroff(req) == -1)
-		return -1;
-
-	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
-		return -1;
-	}
-
-	if ((rv = ecafe_response_recv(temp->fd, &res)) == 0) {
-		return -2;
-	} else if (rv == -1) {
-		return -1;
-	}
-
-	ecafe_response_action(&res);
-
-	return 0;
-}
-
-int ecafe_screenshot(struct request *req)
-{
-	int id, rv;
-	struct client *temp;
-	struct response res = {0};
-
-	id = atoi(request_param_get(req, "id"));
-	temp = client_get(id);
-
-	if (ecafe_request_screenshot(req) == -1)
-		return -1;
-
-	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
-		return -1;
-	}
-
-	if ((rv = ecafe_response_recv(temp->fd, &res)) == 0) {
-		return -2;
-	} else if (rv == -1) {
-		return -1;
-	}
-
-	ecafe_response_screenshot(&res);
-
-	return 0;
-
-}
 int ecafe_getdetails(struct client *cli_info)
 {
 	int rv;
 	struct request req = {0};
-	struct response res = {0};
 
 	if (ecafe_request_getdetails(&req) == -1)
 		return -1;
 
-	if ((rv = ecafe_request_send(cli_info->fd, &req)) == -1) 
+	if ((rv = ecafe_request_send(&req, cli_info->fd)) == -1) 
 		return -1;
-
-	if ((rv = ecafe_response_recv(cli_info->fd, &res)) == 0)
-		return -2;
-	else if (rv == -1)
-		return -1;
-
-	ecafe_response_getdetails(&res, cli_info);
-
-	return 0;
-}
-
-int ecafe_notification(struct request *req)
-{	
-	int id, rv;
-	struct client *temp;
-	struct response res = {0};
-
-	id = atoi(request_param_get(req, "id"));
-	temp = client_get(id);
-
-	if (ecafe_request_notification(req) == -1)
-		return -1;
-
-	if ((rv = ecafe_request_send(temp->fd, req)) == -1) {
-		return -1;
-	}
-
-	if ((rv = ecafe_response_recv(temp->fd, &res)) == 0) {
-		return -2;
-	} else if (rv == -1) {
-		return -1;
-	}
-
-	ecafe_response_notification(&res);
 
 	return 0;
 }

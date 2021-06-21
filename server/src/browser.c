@@ -27,7 +27,7 @@ KORE_SECCOMP_FILTER("app",
 void app_init(void)
 {
 	kore_log(LOG_NOTICE, "test");
-	start_app();
+	// start_app();
 }
 
 int

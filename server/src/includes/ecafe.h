@@ -3,7 +3,6 @@
 
 #include <request.h>
 #include <response.h>
-#include <command.h>
 #include <client.h>
 #include <ecafe_request.h>
 #include <ecafe_response.h>
@@ -60,6 +59,9 @@ typedef struct {
 	int id;
 	char *state;
 } State;
+
+int ecafe_request_handle(char *buf);
+int ecafe_response_handle(char *buf, int connfd);
 
 int ecafe_lock(struct request *req);
 int ecafe_unlock(struct request *req);

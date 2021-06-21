@@ -1,6 +1,7 @@
 #include <client.h>
 
 static List *clients = NULL;
+static struct client *active_client;
 
 int client_id_callback(void *data, void *needle);
 
@@ -113,3 +114,19 @@ char *client_ipstr(struct client *temp)
 
 	return buf;
 }
+
+void client_active_set(struct client *client)
+{
+	active_client = client;
+}
+
+struct client *client_active_get(void)
+{
+	return active_client;
+}
+
+void client_active_unset(void)
+{
+	active_client = NULL;
+}
+

@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <easyio.h>
 #include <request.h>
-#include <command.h>
 
 
 #define PARAM_MESSAGE  "message"
@@ -27,7 +26,7 @@ int ecafe_request_notification(struct request *req);
 int ecafe_request_getdetails(struct request *req);
 
 // int ecafe_request_handle(char *buf, int client);
-int ecafe_request_send(int client, struct request *req);
+int ecafe_request_send(struct request *req, int connfd);
 
 
 
