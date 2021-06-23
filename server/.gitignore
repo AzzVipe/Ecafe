@@ -5,3 +5,5 @@ server.so
 assets.h
 cert
 kore.pid
+src/server
+src/test_server
