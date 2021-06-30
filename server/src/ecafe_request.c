@@ -82,6 +82,7 @@ int ecafe_request_screenshot(struct request *req)
 
 	request_type_set(req, REQ_TYPE_POST);
 	request_uri_set(req, uri);
+	request_header_set(req, PARAM_STAGE, "request");
 
 	return 0;
 }
@@ -110,6 +111,31 @@ int ecafe_request_send(struct request *req, int connfd)
 
 	if ((nbytes = write(connfd, buf, nbytes)) == -1) {
 		perror("write error");
+		return -1;
+	}
+
+	return nbytes;
+}
+
+int ecafe_request_recv(int connfd, struct request *req)
+{
+	int nbytes = 0;
+	char buf[1024 * 10];
+
+	if ((nbytes = read(connfd, buf, sizeof(buf))) == -1) {
+		perror("read error");
+		return -1;
+	}
+	
+	if (nbytes == 0)
+		return 0;
+	
+	buf[nbytes] = 0;
+	
+	puts(buf);
+
+	if(!request_parse(buf, nbytes, req)) {
+		fprintf(stderr, "response_parse : error\n");
 		return -1;
 	}
 

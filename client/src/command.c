@@ -21,15 +21,15 @@
 #define COMMAND_NOTIFICATION_URI "/notification"
 
 const struct command commands[] = {
-	{COMMAND_LOCK       , COMMAND_LOCK_URI       , ecafe_request_lock},
-	{COMMAND_UNLOCK     , COMMAND_UNLOCK_URI     , ecafe_request_unlock},
-	{COMMAND_PING       , COMMAND_PING_URI       , ecafe_request_ping},
-	{COMMAND_MESSAGE    , COMMAND_MESSAGE_URI    , ecafe_request_message},
-	{COMMAND_POWEROFF   , COMMAND_POWEROFF_URI   , ecafe_request_poweroff},
-	{COMMAND_ACTION     , COMMAND_ACTION_URI     , ecafe_request_action},
-	{COMMAND_GETDETAILS , COMMAND_GETDETAILS_URI , ecafe_request_getdetails},
-	{COMMAND_SCREENSHOT , COMMAND_SCREENSHOT_URI , ecafe_request_screenshot},
-	{COMMAND_NOTIFICATION , COMMAND_NOTIFICATION_URI , ecafe_request_notification},
+	{COMMAND_LOCK       , COMMAND_LOCK_URI       , ecafe_request_lock, NULL},
+	{COMMAND_UNLOCK     , COMMAND_UNLOCK_URI     , ecafe_request_unlock, NULL},
+	{COMMAND_PING       , COMMAND_PING_URI       , ecafe_request_ping, NULL},
+	{COMMAND_MESSAGE    , COMMAND_MESSAGE_URI    , ecafe_request_message, NULL},
+	{COMMAND_POWEROFF   , COMMAND_POWEROFF_URI   , ecafe_request_poweroff, NULL},
+	{COMMAND_ACTION     , COMMAND_ACTION_URI     , ecafe_request_action, NULL},
+	{COMMAND_GETDETAILS , COMMAND_GETDETAILS_URI , ecafe_request_getdetails, NULL},
+	{COMMAND_SCREENSHOT , COMMAND_SCREENSHOT_URI , NULL, ecafe_request_screenshot},
+	{COMMAND_NOTIFICATION , COMMAND_NOTIFICATION_URI , ecafe_request_notification, NULL},
 	{NULL, NULL, NULL}
 };
 

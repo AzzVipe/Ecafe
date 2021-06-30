@@ -7,6 +7,7 @@ struct command {
 	char *cmd;
 	char *uri;
 	int  (*req_handle)(struct request *req, struct response *res);
+	int  (*req_handle_special)(struct request *req, struct response *res, int connfd);
 };
 
 extern const struct command commands[];

@@ -40,8 +40,3 @@ int command_get_index_by_uri(const char *uri)
 
 	return -1;
 }
-
-int command_is_getdetails(const char *uri)
-{
-	return strcmp(uri, URI_GETDETAILS) == 0;
-}

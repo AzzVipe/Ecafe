@@ -12,6 +12,7 @@
 #include <easyio.h>
 #include <response.h>
 #include <client.h>
+#include <ecafe_request.h>
 
 int ecafe_response_send(struct response *res, int connfd);
 int ecafe_response_recv(int connfd, struct response *res);

@@ -26,6 +26,26 @@ static ssize_t response_body_append_binary(struct response *res, char *buf, size
 
 void response_header_set(struct response *res, const char *key, const char *value)
 {
+	int i;
+	size_t len = response_header_size(res);
+
+	for (i = 0; i < (int) len; ++i) {
+		if (strcmp(res->header_keys[i], key) == 0)
+			break;
+	}
+
+	// Found the key
+	if (i != (int) len) {
+		free(res->header_keys[i]);
+		free(res->header_values[i]);
+		// Shift elements left
+		for (; i < (int) len - 1; ++i) {
+			res->header_keys[i] = res->header_keys[i + 1];
+			res->header_values[i] = res->header_values[i + 1];
+		}
+		res->nheader--;
+	}
+
 	if (res->nheader == RES_MAX_PARAM_LEN - 1)
 		return;
 
@@ -197,8 +217,10 @@ int response_prepare(struct response *res, char *buf, size_t size)
 	}
 
 	/* Marking header end and starting of response body */
-	if (bufi < size) buf[bufi++] = '\r';
-	if (bufi < size) buf[bufi++] = '\n';
+	if (res->nrecords) {
+		if (bufi < size) buf[bufi++] = '\r';
+		if (bufi < size) buf[bufi++] = '\n';
+	}
 
 	if (res->isbinary) {
 		return response_body_append_binary(res, buf, size, bufi);
@@ -393,6 +415,17 @@ void response_dump(struct response *res)
 	/* Dump status code and message */
 	fprintf(stderr, "{\n");
 	fprintf(stderr, "    %d %s\n", res->status, res->msg);
+
+	/* Header structure */
+	fprintf(stderr, "    {\n");
+	for (int i = 0; i < res->nheader; ++i) {
+		fprintf(stderr, "        \"%s\": \"%s\"%s\n",
+				res->header_keys[i],
+				res->header_values[i],
+				(res->nheader == i + 1) ? "" : ",");
+	}
+	fprintf(stderr, "    }\n");
+
 	fprintf(stderr, "    [\n");
 
 	nrecords = res->nrecords;

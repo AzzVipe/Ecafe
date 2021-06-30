@@ -25,6 +25,9 @@ static size_t reqbuf_datai;
 static bool request_isheader(char *line);
 static bool request_uri_parse(struct request *req, char *line);
 static bool request_extract_key_value(struct request *req, char *line, char delim);
+static bool request_continue_parsing_binary(struct request *req);
+static ssize_t request_body_append_binary(struct request *req, char *buf, size_t buflen, ssize_t offset);
+
 /**
  * @return int 0 = empty line, +n = length of read line, -1 = EOF
  */
@@ -67,7 +70,6 @@ bool
 request_parse(const char *reqbuf, size_t rbdatalen, struct request *req)
 {
 	String line;
-	bool body_started = false;
 	size_t iline = 0;
 	long int nbytes;
 
@@ -90,24 +92,32 @@ request_parse(const char *reqbuf, size_t rbdatalen, struct request *req)
 
 	free(line);
 
-	while ((nbytes = getstring(&line)) >= 0) {
+	/* Extract headers */
+	while ((nbytes = getstring(&line)) > 0) {
 		++iline;
 		fprintf(stderr, "%lu[%ld]: %s\n", iline, nbytes, line);
-		if (nbytes == 0)
-			continue;
-
-		if (!body_started && request_isheader(line)) {
-			// Extract header
-			request_extract_key_value(req, line, REQ_HEADER_DELIM);
-			continue;
-		}
-
-		body_started = true;
-
-		request_extract_key_value(req, line, REQ_PARAM_DELIM);
-
+		request_extract_key_value(req, line, REQ_HEADER_DELIM);
 		free(line);
 	}
+
+	/* If request body has binary data then call binary body parser */
+	if (request_header_get(req, "content-type") &&
+		strcmp(request_header_get(req, "content-type"), REQ_HEADER_BINARY_VALUE) == 0) {
+			return request_continue_parsing_binary(req);
+
+	/* Otherwise call normal body parser */
+	} else {
+		while ((nbytes = getstring(&line)) >= 0) {
+			if (nbytes == 0)
+				continue;
+
+			request_extract_key_value(req, line, REQ_PARAM_DELIM);
+
+			free(line);
+		}
+
+	}
+
 
 	return true;
 }
@@ -115,21 +125,67 @@ request_parse(const char *reqbuf, size_t rbdatalen, struct request *req)
 void
 request_param_set(struct request *req, const char *key, const char *value)
 {
+	int i;
+	size_t len = request_param_size(req);
+
+	for (i = 0; i < (int) len; ++i) {
+		if (strcmp(req->param_keys[i], key) == 0)
+			break;
+	}
+
+	// Found the key
+	if (i != (int) len) {
+		free(req->param_keys[i]);
+		free(req->param_values[i]);
+		// Shift elements left
+		for (; i < (int) len - 1; ++i) {
+			req->param_keys[i] = req->param_keys[i + 1];
+			req->param_values[i] = req->param_values[i + 1];
+		}
+		req->iparam--;
+	}
+
 	if (req->iparam == REQ_MAX_PARAM_LEN - 1)
 		return;
 
 	req->param_keys[req->iparam] 		= strdup(key);
 	req->param_values[req->iparam++] 	= strdup(value);
+
+	str_trim(req->param_keys[req->iparam - 1]);
+	str_trim(req->param_values[req->iparam - 1]);
 }
 
 void
 request_header_set(struct request *req, const char *key, const char *value)
 {
+	int i;
+	size_t len = request_header_size(req);
+
+	for (i = 0; i < (int) len; ++i) {
+		if (strcmp(req->header_keys[i], key) == 0)
+			break;
+	}
+
+	// Found the key
+	if (i != (int) len) {
+		free(req->header_keys[i]);
+		free(req->header_values[i]);
+		// Shift elements left
+		for (; i < (int) len - 1; ++i) {
+			req->header_keys[i] = req->header_keys[i + 1];
+			req->header_values[i] = req->header_values[i + 1];
+		}
+		req->iheader--;
+	}
+
 	if (req->iheader == REQ_MAX_PARAM_LEN - 1)
 		return;
 
 	req->header_keys[req->iheader] 		= strdup(key);
 	req->header_values[req->iheader++] 	= strdup(value);
+
+	str_trim(req->header_keys[req->iheader - 1]);
+	str_trim(req->header_values[req->iheader - 1]);
 }
 
 size_t
@@ -159,7 +215,7 @@ request_param_get(struct request *req, const char *key)
 {
 	size_t len = request_param_size(req);
 
-	for (int i = 0; i < len; ++i) {
+	for (int i = 0; i < (int) len; ++i) {
 		if (strcmp(req->param_keys[i], key) == 0)
 			return req->param_values[i];
 	}
@@ -172,7 +228,7 @@ request_header_get(struct request *req, const char *key)
 {
 	size_t len = request_header_size(req);
 
-	for (int i = 0; i < len; ++i) {
+	for (int i = 0; i < (int) len; ++i) {
 		if (strcmp(req->header_keys[i], key) == 0)
 			return req->header_values[i];
 	}
@@ -227,10 +283,12 @@ request_extract_key_value(struct request *req, char *line, char delim)
 	*p = 0;
 	if (delim == REQ_HEADER_DELIM) {
 		str_trim(line);
+		str_trim(p + 1);
 		request_header_set(req, line, p + 1);
 		*p = REQ_HEADER_DELIM;
 	} else if (delim == REQ_PARAM_DELIM) {
 		str_trim(line);
+		str_trim(p + 1);
 		request_param_set(req, line, p + 1);
 		*p = REQ_PARAM_DELIM;
 	}
@@ -242,6 +300,9 @@ static ssize_t
 getstring(char **line)
 {
 	ssize_t len = 0, asize = 1024;
+
+	if (reqbufp == NULL)
+		return -1;
 
 	char *s = malloc(sizeof(char) * asize);
 	if (s == NULL) {
@@ -342,10 +403,18 @@ ssize_t request_prepare(struct request *req, char *buf, ssize_t buflen)
 		if (bufi < buflen)
 			buf[bufi++] = '\n';
 	}
+	if (req->isbinary) {
+		int nbytes = sprintf(buf + bufi, "content-len: %lu\n", req->bodylen);
+		bufi += nbytes;
+	}
 
 	/* Marking header end and starting of request body */
 	if (bufi < buflen)
 		buf[bufi++] = '\n';
+
+	if (req->isbinary) {
+		return request_body_append_binary(req, buf, buflen, bufi);
+	}
 
 	/* Constructing params */
 	for (int i = 0, psize = request_param_size(req);
@@ -383,7 +452,7 @@ void request_dump(struct request *req)
 	fprintf(stderr, "    uri: \"%s\"\n", req->uri);
 
 	fprintf(stderr, "    header: [\n");
-	for (int i = 0; i < request_header_size(req); ++i) {
+	for (size_t i = 0; i < request_header_size(req); ++i) {
 		if (i == request_header_size(req) - 1) {
 			fprintf(stderr, "        %s: \"%s\"\n",
 					req->header_keys[i],
@@ -397,7 +466,7 @@ void request_dump(struct request *req)
 	fprintf(stderr, "    ]\n");
 
 	fprintf(stderr, "    params: [\n");
-	for (int i = 0; i < request_param_size(req); ++i) {
+	for (size_t i = 0; i < request_param_size(req); ++i) {
 		if (i == request_param_size(req) - 1) {
 			fprintf(stderr, "        %s: \"%s\"\n",
 					req->param_keys[i],
@@ -413,4 +482,58 @@ void request_dump(struct request *req)
 	fprintf(stderr, "    body: \"%s\"\n", req->body);
 
 	fprintf(stderr, "}\n");
+}
+
+static bool
+request_continue_parsing_binary(struct request *req)
+{
+	const char *content_lens;
+	int content_len;
+
+	content_lens = request_header_get(req, "content-len");
+	if (!content_lens) {
+		fprintf(stderr, "request_continue_parsing_binary: no content length header found\n");
+		return false;
+	}
+
+	content_len = atoi(content_lens);
+	req->isbinary = 1;
+	req->bodylen  = content_len;
+
+	if (!(req->body = malloc(content_len))) {
+		perror("request_continue_parsing_binary");
+		return false;
+	}
+
+	memcpy(req->body, reqbufp, content_len);
+
+	return true;
+}
+
+static ssize_t
+request_body_append_binary(struct request *req, char *buf, size_t buflen, ssize_t offset)
+{
+	if (req->bodylen > (buflen - offset))
+		return -1;
+
+	memcpy(buf + offset, req->body, req->bodylen);
+
+	return req->bodylen + offset;
+}
+
+void request_body_binary_set(struct request *req, u_int8_t *buf, size_t buflen)
+{
+	req->isbinary = 1;
+
+	request_header_set(req, "content-type", REQ_HEADER_BINARY_VALUE);
+
+	if ((req->body = malloc(buflen)) == NULL) {
+		perror("request_body_binary_set error");
+		return;
+	}
+
+	memcpy(req->body, buf, buflen);
+
+	req->bodylen = buflen;
+
 }

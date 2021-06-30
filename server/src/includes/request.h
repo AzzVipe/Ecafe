@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/types.h>
 
 
 #define REQ_MAX_PARAM_LEN 	10
@@ -16,6 +17,7 @@
 
 #define REQ_HEADER_DELIM	':'
 #define REQ_PARAM_DELIM		'='
+#define REQ_HEADER_BINARY_VALUE "application/octet"
 
 
 struct request {
@@ -26,10 +28,11 @@ struct request {
 
 	char 	*param_keys[REQ_MAX_PARAM_LEN];
 	char 	*param_values[REQ_MAX_PARAM_LEN];
-	char 	*body;
+	u_int8_t *body;
 	size_t 	bodylen;
 	int		iparam;
 	int		iheader;
+	int 	isbinary;
 
 	/* It will store user data pointer which user can use
 	 * to store per request specific data */
@@ -48,6 +51,7 @@ char *request_uri_get(struct request *req);
 void request_uri_set(struct request *req, const char *uri);
 size_t request_header_size(struct request *req);
 size_t request_param_size(struct request *req);
+void request_body_binary_set(struct request *req, u_int8_t *buf, size_t buflen);
 
 /**
  * Returns value of parameter of the request body key in the given

@@ -8,6 +8,7 @@
 #include <request.h>
 #include <response.h>
 #include <easyio.h>
+#include <str.h>
 #include <validator.h>
 #include <command.h>
 #include <system_linux.h>
@@ -26,10 +27,12 @@ int ecafe_request_message(struct request *req, struct response *res);
 int ecafe_request_ping(struct request *req, struct response *res);
 int ecafe_request_poweroff(struct request *req, struct response *res);
 int ecafe_request_getdetails(struct request *req, struct response *res);
-int ecafe_request_screenshot(struct request *req, struct response *res);
 int ecafe_request_notification(struct request *req, struct response *res);
 
+int ecafe_request_screenshot(struct request *req, struct response *res, int connfd);
+
 int ecafe_response_send(struct response *res, int connfd);
+int ecafe_request_recv(int connfd, struct request *req);
 
 
 

@@ -12,9 +12,7 @@ static struct sockaddr_in cliaddr, servaddr;
 
 int main(void)
 {
-	int rv = 0;
 	char buf[1024];
-	int is_test_server_connected = 0;
 	int c_listenfd, s_listenfd, c_connfd, s_connfd, maxfd; /*s prefix is for server and c prefix is for client*/
 	int nclients = 0, id = 0, nready, nbytes;
 	fd_set allset, rset;
@@ -47,7 +45,6 @@ int main(void)
 		/* Connection request of webserver/server */
 
 		if (FD_ISSET(s_listenfd, &rset)) {
-			// if (is_test_server_connected == 1) 
 			// 	continue;
 
 			servaddr_len = sizeof(servaddr);
@@ -60,8 +57,7 @@ int main(void)
 			if (s_connfd > maxfd)
 				maxfd = s_connfd;
 
-			fprintf(stderr, "Test Server Connected \n");
-			is_test_server_connected = 0;
+			fprintf(stderr, "Test Server Connected !\n\n");
 			
 			if (--nready == 0)
 				continue;
@@ -75,6 +71,7 @@ int main(void)
 				perror("accept error");
 				continue;
 			}
+			puts("Client request accepted!\n");
 			nclients++;
 			temp.id = ++id;
 			temp.fd = c_connfd;
@@ -88,15 +85,14 @@ int main(void)
 			if (c_connfd > maxfd)
 				maxfd = c_connfd;
 
-			puts("Client request accepted!");
 
 			if (client_getall(&client_array) != nclients) {
 				perror("client_getall error");
 				continue;
 			}
 
-			for (int i = 0; i < nclients; ++i) 
-				client_dump(client_array[i]);
+			// for (int i = 0; i < nclients; ++i) 
+			// 	client_dump(client_array[i]);
 			
 			if (--nready == 0)
 				continue;
@@ -111,12 +107,9 @@ int main(void)
 				fprintf(stderr, "Test Sever %d Terminated\n", s_connfd);
 				close(s_connfd);
 				FD_CLR(s_connfd, &allset);
-				is_test_server_connected = 0;
 
 			} else if (nbytes > 0) {
 				buf[nbytes] = '\0';
-				puts(buf);
-
 				ecafe_request_handle(buf);
 			}
 			nready--;
@@ -136,8 +129,6 @@ int main(void)
 					FD_CLR(client_array[i]->fd, &allset);
 				} else if (nbytes > 0) {
 					buf[nbytes] = '\0';
-					puts(buf);
-
 					ecafe_response_handle(buf, s_connfd);
 				}
 				

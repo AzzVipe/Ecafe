@@ -3,6 +3,7 @@
 #define APP_NAME "Ecafe"
 #define BLOCK    "block"
 #define UNBLOCK  "unblock"
+#define PARAM_STAGE  "stage"
 
 #define IMG_ADDR "/tmp/ecafe_screenshot.jpeg"
 
@@ -165,34 +166,60 @@ int ecafe_request_getdetails(struct request *req, struct response *res)
 	return 0;
 }
 
-int ecafe_request_screenshot(struct request *req, struct response *res)
+int ecafe_request_screenshot(struct request *req, struct response *res, int connfd)
 {
+	int nbytes, rv;
 	int imgp, img_size;
-	char buf[1024 * 200];
+	char img_buf[1024 * 1024]; /* 1 MB */
+	char img_ssize[24];
 
 	if (req == NULL || res == NULL)
 		return -1;
+	
+	response_status_set(res, RES_STATUS_OK);
+
+	if (strcmp(request_header_get(req, PARAM_STAGE), "request") != 0)
+		return -1;
 
 	if(system_linux_screenshot(IMG_ADDR) == -1) {
-		response_status_set(res, RES_STATUS_ERROR);
+		perror("ecafe_request_screenshot/system_linux_screenshot error");
 		return -1;
 	}
 
 	if ((imgp = open(IMG_ADDR, O_RDONLY)) == -1) {
-		response_status_set(res, RES_STATUS_ERROR);
+		perror("ecafe_request_screenshot/open error");
 		return -1;
 	}
 
-	if ((img_size = read(imgp, buf, sizeof(buf))) == -1) {
-		perror("test_response_parse_binary error");
-
+	if ((img_size = read(imgp, img_buf, sizeof(img_buf))) == -1) {
+		perror("ecafe_request_screenshot/read error");
 		return -1;
 	}
 
-	// printf("Image size : %d\n", img_size);
+	sprintf(img_ssize, "%d", img_size);
+	printf("Size of image : %s", img_ssize);
+	response_header_set(res, "content-len", img_ssize);
+	response_header_set(res, PARAM_STAGE, "request");
 
-	response_status_set(res, RES_STATUS_DATA);
-	response_body_binary_set(res, (u_int8_t *) buf, img_size);
+	if (ecafe_response_send(res, connfd) == -1)
+		return -1;
+
+	if ((rv = ecafe_request_recv(connfd, req)) == -1 || rv == 0)
+		return -1;
+
+	if (strcmp(request_header_get(req, PARAM_STAGE), "transfer") != 0)
+		return -1;
+
+	if (write(connfd, img_buf, img_size) == -1) {
+		perror("ecafe_request_screenshot/write error");
+		return -1;
+	}
+
+	if ((rv = ecafe_request_recv(connfd, req)) == -1 || rv == 0)
+		return -1;
+
+	if (strcmp(request_header_get(req, PARAM_STAGE), "finished") != 0)
+		return -1;
 
 	return 0;
 }
@@ -221,7 +248,7 @@ int ecafe_request_notification(struct request *req, struct response *res)
 int ecafe_response_send(struct response *res, int connfd)
 {
 	int nbytes;
-	char buf[1024 * 1024]; /* 10 MB */
+	char buf[1024 * 10]; /* 10 kb */
 
 	if ((nbytes = response_prepare(res, buf, sizeof(buf))) == -1) {
 		fprintf(stderr, "response_prepare error \n");
@@ -244,4 +271,27 @@ int ecafe_response_send(struct response *res, int connfd)
 	}
 
 	return 0;
+}
+
+int ecafe_request_recv(int connfd, struct request *req)
+{
+	int nbytes = 0;
+	char buf[1024 * 10];
+
+	if ((nbytes = read(connfd, buf, sizeof(buf))) == -1) {
+		perror("read error");
+		return -1;
+	}
+	
+	if (nbytes == 0)
+		return 0;
+	
+	puts(buf);
+
+	if(!request_parse(buf, nbytes, req)) {
+		fprintf(stderr, "response_parse : error\n");
+		return -1;
+	}
+
+	return nbytes;
 }

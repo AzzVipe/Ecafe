@@ -12,6 +12,7 @@
 #define PARAM_FOOD_QTY "qty"
 #define PARAM_PROG     "prog"
 #define PARAM_STATE    "state"
+#define PARAM_STAGE    "stage"
 
 /* Server Requests */
 
@@ -27,6 +28,7 @@ int ecafe_request_getdetails(struct request *req);
 
 // int ecafe_request_handle(char *buf, int client);
 int ecafe_request_send(struct request *req, int connfd);
+int ecafe_request_recv(int connfd, struct request *req);
 
 
 
