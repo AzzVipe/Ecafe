@@ -21,9 +21,9 @@ int test_request_run(struct test_request *test_req, int connfd);
 int test_assert_response(struct test_request *test_req, int connfd);
 
 struct test_request tests[] = {
-	// {"/lock",     {"id", NULL}, {"1", NULL}, NULL, 201},
-	// {"/unlock",   {"id", NULL}, {"1", NULL}, NULL, 201},
-	// {"/ping",     {"id", NULL}, {"1", NULL}, NULL, 200},
+	{"/lock",     {"id", NULL}, {"1", NULL}, NULL, 201},
+	{"/unlock",   {"id", NULL}, {"1", NULL}, NULL, 201},
+	{"/ping",     {"id", NULL}, {"1", NULL}, NULL, 200},
 	// {"/poweroff", {"id", NULL}, {"1", NULL}, NULL, 201},
 	{"/screenshot", {"id", NULL}, {"1", NULL}, test_response_screenshot, 200},
 	{"/message",  {"id", "msg", NULL}, {"1", "test message", NULL}, NULL, 200},
@@ -151,7 +151,7 @@ int test_response_screenshot(struct response *res, int connfd)
 			return -1;
 		}
 
-		if ((tbytes + nbytes) > sizeof(img_buf)) {
+		if ((tbytes + nbytes) > (int ) sizeof(img_buf)) {
 			fprintf(stderr, "File too large\n");
 			return -1;
 		}
@@ -176,6 +176,22 @@ int test_response_screenshot(struct response *res, int connfd)
 
 	if (test_request_send(&req, connfd) == -1) /* Sending request to client for the same */
 		return -1;
+
+	if ((nbytes = read(connfd, buf, sizeof(buf))) == -1) {
+		perror("read error ");
+		return -1;
+	}
+	else if(nbytes == 0) {
+		fprintf(stderr, "Server Terminated\n");
+		return -1;
+	}
+
+	buf[nbytes] = 0;
+	if (response_parse(buf, nbytes, res) == -1) {
+		perror("test_assert_response/response_parse error");
+		return -1;
+	}
+	puts(buf);
 
 	return tbytes;
 }

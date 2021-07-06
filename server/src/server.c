@@ -97,6 +97,7 @@ int main(void)
 			if (--nready == 0)
 				continue;
 		}
+		/* @TODO: Implement non-blocking and timeout in read system calls */
 
 		/* Requests from server */
 

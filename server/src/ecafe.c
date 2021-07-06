@@ -50,7 +50,7 @@ int ecafe_response_handle(char *buf, int connfd) /* Hanlding client responses */
 
 	if ((nbytes = response_parse(buf, strlen(buf), &res)) == -1) {
 		fprintf(stderr, "ecafe_response_handle/response_parse error \n");
-		// return -1;
+		return -1;
 	}
 
 	if ((uri = response_header_get(&res, "uri")) == NULL ) {
@@ -106,3 +106,13 @@ int ecafe_clientall(struct client ***clients)
 	return client_getall(clients);
 }
 
+void ecafe_log_error(int Errno, char *filename, int line)
+{
+	char str_msg[2048];
+	char *error_msg;
+
+	error_msg = strerror(Errno);
+
+	sprintf(str_msg, "ERROR:[%s:%d]:%s", filename, line, error_msg);
+	fprintf(stderr, "%s\n", str_msg);
+}

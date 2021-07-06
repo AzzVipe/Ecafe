@@ -23,11 +23,10 @@ KORE_SECCOMP_FILTER("app",
 	KORE_SYSCALL_ALLOW(newfstatat),
 );
 
-
-void app_init(void)
+void
+app_init(void)
 {
-	kore_log(LOG_NOTICE, "test");
-	// start_app();
+	// 
 }
 
 int

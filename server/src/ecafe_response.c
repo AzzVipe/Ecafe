@@ -3,6 +3,7 @@
 #define PARAM_STAGE "stage"
 
 static int ecafe_response_screenshot_client(char *img_buf, int size, struct response *res);
+static int ecafe_response_screenshot_server(char *img_buf, int img_size, struct response *res, int connfd);
 
 int ecafe_response_send(struct response *res, int connfd)
 {
@@ -140,36 +141,17 @@ int ecafe_response_getdetails(struct response *res, int connfd)
 
 int ecafe_response_screenshot(struct response *res, int connfd)
 {
-	int img_size = 0, rv;
-	char img_buf[1024 * 1024], buf[1024];
-	struct request req = {};
+	int img_size = 0;
+	char img_buf[1024 * 1024];
 
-	if ((img_size = ecafe_response_screenshot_client(img_buf, sizeof(img_buf), res)) == -1 ) /* Receiving image from client */
+	/* Receiving image from client */
+	if ((img_size = ecafe_response_screenshot_client(img_buf, sizeof(img_buf), res)) == -1 ) 
 		return -1;
+
 	printf("Sending response to server......\n");
-	response_status_set(res, RES_STATUS_OK);
 
-	if (ecafe_response_send(res, connfd) == -1) /* Now sending to server */
-		return -1;
-
-	if ((rv = ecafe_request_recv(connfd, &req)) == -1 || rv == 0)
-		return -1;
-
-	if (strcmp(request_header_get(&req, PARAM_STAGE), "transfer") != 0)
-		return -1;
-
-	if (write(connfd, img_buf, img_size) == -1) {
-		perror("ecafe_request_screenshot/write error");
-		return -1;
-	}
-
-	if ((rv = ecafe_request_recv(connfd, &req)) == -1 || rv == 0)
-		return -1;
-
-	if (strcmp(request_header_get(&req, PARAM_STAGE), "finished") != 0)
-		return -1;
-
-	return 0;
+	return ecafe_response_screenshot_server(img_buf, img_size, res, connfd);
+	
 }
 
 int ecafe_response_notification(struct response *res)
@@ -243,4 +225,66 @@ static int ecafe_response_screenshot_client(char *img_buf, int size, struct resp
 		return -1;
 
 	return tbytes;
+}
+
+static int ecafe_response_screenshot_server(char *img_buf, int img_size, struct response *res, int connfd)
+{
+	int nready, rv;
+	fd_set rset;
+	char *stage;
+	struct timeval tv = {};
+	struct request req = {};
+	
+	tv.tv_sec = 2;
+
+	FD_ZERO(&rset);
+	FD_SET(connfd, &rset);
+
+	response_status_set(res, RES_STATUS_OK);
+	if (ecafe_response_send(res, connfd) == -1) /* Now sending to server */
+		return -1;
+
+	while(1) {
+		
+		nready = select(connfd + 1, &rset, NULL, NULL, &tv);
+
+		if (nready == 0) {
+			fprintf(stderr, "Timeout\n");
+			return -1;
+		} else if (nready == -1) {
+			perror("ecafe_response_screenshot_server select error ");
+			return -1;
+		}
+
+		if (FD_ISSET(connfd, &rset)) {
+			if ((rv = ecafe_request_recv(connfd, &req)) == -1) {
+				perror("ecafe_response_screenshot_server/ecafe_request_recv error ");
+				return -1;
+			} else if (rv == 0) {
+				fprintf(stderr, "Test Server terminated !\n");
+				return -1;
+			}
+
+			if ((stage = request_header_get(&req, PARAM_STAGE)) == NULL) {
+				fprintf(stderr, "Header not found!\n");
+				return -1;
+			}
+
+			if (strcmp(stage, "transfer") == 0) {
+				if (write(connfd, img_buf, img_size) == -1) {
+					perror("ecafe_request_screenshot/write error");
+					return -1;
+				}
+			} else if (strcmp(stage, "finished") == 0) {
+				response_header_set(res, "stage", "finished");
+				puts("finished");
+				response_dump(res);
+				if (ecafe_response_send(res, connfd) == -1)
+					return -1;
+				break;
+			}
+		}
+	}
+	
+	return 0;	
 }

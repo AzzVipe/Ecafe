@@ -1,6 +1,7 @@
 #ifndef __ECAFE_
 #define __ECAFE_
 
+#include <errno.h>
 #include <request.h>
 #include <response.h>
 #include <client.h>
@@ -59,6 +60,10 @@ typedef struct {
 	int id;
 	char *state;
 } State;
+
+void ecafe_log_error(int Errno, char *filename, int line);
+
+#define PRINT_ERROR(Errno) ecafe_log_error(Errno, __FILE__, __LINE__)
 
 int ecafe_request_handle(char *buf);
 int ecafe_response_handle(char *buf, int connfd);
