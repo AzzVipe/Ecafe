@@ -1,118 +1,275 @@
 #include <sock_lib.h>
 #include <ecafe.h>
-#include <command.h>
 
-int ecafe_request_handle(char *buf) /* Handling requests from server */
+static int ecafe_send_recieve(struct request *req, struct response *res);
+static int _ecafe_request_screenshot(struct response *res);
+static void ecafe_client_populate(struct client *client, struct record *rec);
+static void ecafe_clientall_populate(struct client ***clients, struct response *res);
+
+int ecafe_lock(struct request *req)
 {
-	int id, rv, index;
-	char *uri;
-	struct request req = {};
-	struct client *temp;
-	
-	if (!request_parse(buf, strlen(buf), &req)) {
-		fprintf(stderr, "ecafe_request_handle/request_parse : error\n");
-		return -1;
-	}
-
-	if ((uri = request_uri_get(&req)) == NULL)
-		return -1;
-
-	printf("%s\n--------------------\n\n", uri);
-	request_dump(&req);
-
-	if ((index = command_get_index_by_uri(uri)) == -1) {
-		fprintf(stderr, "command_get_index_by_uri : error\n");
-		return -1;
-	}
-
-	if(commands[index].req_handle(&req) == -1) {
-		fprintf(stderr, "request_handle : error\n");
-		return -1;
-	}
-
-	id = atoi(request_param_get(&req, "id"));
-	temp = client_get(id);
-
-	printf("Sending request to client.....\n");
-	if ((rv = ecafe_request_send(&req, temp->fd)) == -1) { /* Sending request to client for the same */
-		fprintf(stderr, "ecafe_request_send : error\n");
-		return -1;
-	}
-
-	return 0;
-}
-
-int ecafe_response_handle(char *buf, int connfd) /* Hanlding client responses */
-{
-	char *uri;
-	int index, nbytes, rv;
 	struct response res = {};
 
-	if ((nbytes = response_parse(buf, strlen(buf), &res)) == -1) {
-		fprintf(stderr, "ecafe_response_handle/response_parse error \n");
+	if (ecafe_request_lock(req) == -1) {
+		fprintf(stderr, "ecafe_request_lock : error\n");
 		return -1;
 	}
+	request_dump(req);
 
-	if ((uri = response_header_get(&res, "uri")) == NULL ) {
-		fprintf(stderr, "ecafe_response_handle/response_keyval_get error \n");
-		return -1;
-	}
-
-	if ((index = command_get_index_by_uri(uri)) == -1) {
-		fprintf(stderr, "command_get_index_by_uri : error\n");
-		return -1;
-	}
-	printf("Client Response  : \n");
-
-	if (commands[index].res_handle_special) {
-		return commands[index].res_handle_special(&res, connfd);
-	}
-
-	if(commands[index].res_handle(&res) == -1) {
-		fprintf(stderr, "request_handle : error\n");
-		return -1;
-	}
-
-	printf("Sending response to server.....\n");
-	if ((rv = ecafe_response_send(&res, connfd)) == -1) { /* Responsing back to server */
-		fprintf(stderr, "ecafe_request_send : error\n");
-		return -1;
-	}
-	puts("");
-
-	return 0;
+	return ecafe_send_recieve(req, &res);
 }
 
-
-int ecafe_getdetails(struct client *cli_info)
+int ecafe_unlock(struct request *req)
 {
-	int rv;
-	struct request req = {0};
+	struct response res = {0};
 
-	printf("/getdetails\n----------------------\n\n");
+	if (ecafe_request_unlock(req) == -1) {
+		fprintf(stderr, "ecafe_request_unlock : error\n");
+		return -1;
+	}
+	request_dump(req);
+	
+	return ecafe_send_recieve(req, &res);
+}
 
-	if (ecafe_request_getdetails(&req) == -1)
+int ecafe_ping(struct request *req)
+{
+	struct response res = {0};
+
+	if (ecafe_request_ping(req) == -1) 
 		return -1;
 
-	printf("Sending request to client......\n");
-	if ((rv = ecafe_request_send(&req, cli_info->fd)) == -1) 
+	request_dump(req);
+
+	return ecafe_send_recieve(req, &res);
+}
+
+int ecafe_message(struct request *req)
+{
+	struct response res = {0};
+
+	if (ecafe_request_message(req) == -1)
 		return -1;
 
-	return 0;
+	request_dump(req);
+
+	return ecafe_send_recieve(req, &res);
+}
+
+int ecafe_action(struct request *req)
+{
+	struct response res = {0};
+
+	if (ecafe_request_action(req) == -1)
+		return -1;
+
+	request_dump(req);
+
+	return ecafe_send_recieve(req, &res);
+}
+
+int ecafe_poweroff(struct request *req)
+{
+	struct response res = {0};
+
+	if (ecafe_request_poweroff(req) == -1)
+		return -1;
+
+	request_dump(req);
+
+	return ecafe_send_recieve(req, &res);
+}
+
+int ecafe_screenshot(struct request *req)
+{
+	struct response res = {0};
+
+	ecafe_request_screenshot(req);
+
+	request_dump(req);
+
+	ecafe_send_recieve(req, &res);
+
+	return _ecafe_request_screenshot(&res);
+}
+
+int ecafe_notification(struct request *req)
+{	
+	struct response res = {0};
+
+	if (ecafe_request_notification(req) == -1)
+		return -1;
+
+	request_dump(req);
+
+	return ecafe_send_recieve(req, &res);
 }
 
 int ecafe_clientall(struct client ***clients)
 {
-	return client_getall(clients);
+	struct request req = {};
+	struct response res = {};
+
+	if (ecafe_request_clientall(&req) == -1)
+		return -1;
+
+	request_dump(&req);
+
+	if (ecafe_send_recieve(&req, &res) == -1) {
+		return -1;
+	}
+	response_dump(&res);
+
+	ecafe_clientall_populate(clients, &res);
+
+	return res.nrecords;
 }
 
-void ecafe_log_error(int Errno, char *filename, int line)
+int ecafe_client(struct client *client)
 {
-	char str_msg[2048];
-	char *error_msg;
+	struct request req = {};
+	struct response res = {};
+	char id[1024];
 
-	error_msg = strerror(Errno);
+	if (ecafe_request_client(&req) == -1)
+		return -1;
 
-	sprintf(str_msg, "ERROR:[%s:%d]:%s", filename, line, error_msg);
-	fprintf(stderr, "%s\n", str_msg);
+	sprintf(id, "%d", client->id);
+	request_param_set(&req, "id", id);
+	request_dump(&req);
+
+	if (ecafe_send_recieve(&req, &res) == -1) {
+		return -1;
+	}
+	response_dump(&res);
+
+	ecafe_client_populate(client, &(res.records[0]));
+
+	return res.nrecords;
+}
+
+
+static int _ecafe_request_screenshot(struct response *res)
+{
+	int connfd;
+	int nbytes = 0, tbytes = 0;
+	int imgfd, img_size;
+	char *img_ssize;
+	char buf[1024], img_buf[1024 * 1024];
+	char *uri = "/screenshot", *stage;
+	struct request req = {};
+
+	connfd = get_server_fd();
+
+	stage = response_header_get(res, "stage");
+
+	if (strcmp(stage, "request") != 0)
+		return -1;
+
+	if ((img_ssize = response_header_get(res, "content-len")) == NULL) 
+		return -1;
+	
+	img_size = atoi(img_ssize);
+
+	request_type_set(&req, REQ_TYPE_POST);
+	request_uri_set(&req, uri);
+	request_header_set(&req, "stage", "transfer");
+
+	if (ecafe_request_send(&req, connfd) == -1) /* Sending request to server for transfer stage */
+		return -1;
+
+	while(tbytes != img_size) {
+		if ((nbytes = read(connfd, buf, sizeof(buf))) == 0) {
+			fprintf(stderr, "Server Terminated\n");
+			return -1;
+		}
+
+		if (nbytes < 0) {
+			perror("ecafe_response_screenshot/read error");
+			return -1;
+		}
+
+		if ((tbytes + nbytes) > (int ) sizeof(img_buf)) {
+			fprintf(stderr, "File too large\n");
+			return -1;
+		}
+
+		memcpy(img_buf + tbytes, buf, nbytes);
+		tbytes += nbytes;
+	}
+
+	printf("Image recieved !\n");
+
+	if ((imgfd = open("/tmp/ecafe_image_out.jpeg", O_CREAT | O_RDWR | O_TRUNC, 0664)) == -1) {
+		perror("ecafe_response_screenshot error");
+		return -1;
+	}
+
+	if (write(imgfd, img_buf, tbytes) == -1) {
+		perror("ecafe_response_screenshot/write error");
+		return -1;
+	}
+
+	request_header_set(&req, "stage", "finished");
+
+	if (ecafe_request_send(&req, connfd) == -1) /* Sending request to client for the same */
+		return -1;
+
+	if(ecafe_response_recv(connfd, res) == -1)
+		return -1;
+
+	return tbytes;
+}
+
+static int ecafe_send_recieve(struct request *req, struct response *res)
+{
+	int rv = 0;
+	int connfd = get_server_fd();
+
+	if ((rv = ecafe_request_send(req, connfd)) == -1) {
+		fprintf(stderr, "ecafe_request_send : error\n");
+		return -1;
+	}
+
+	if ((rv = ecafe_response_recv(connfd, res)) == 0) {
+		fprintf(stderr, "ecafe_response_recv : Server Terminated \n");
+		return -2;
+	} else if (rv == -1) {
+		fprintf(stderr, "ecafe_response_recv : error\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static void ecafe_clientall_populate(struct client ***clients, struct response *res)
+{
+	struct client *temp;
+	struct client **temp_array;
+
+	temp_array = malloc(sizeof(struct client *) * res->nrecords);
+
+	if (temp_array == NULL) {
+		fprintf(stderr, "malloc: empty\n");
+		return;
+	}
+
+	for (int i = 0; i < res->nrecords; ++i) {
+		temp_array[i] = malloc(sizeof(struct client));
+		temp = temp_array[i];
+		ecafe_client_populate(temp, &(res->records[i]));
+	}
+
+	*clients = temp_array;
+}
+
+static void ecafe_client_populate(struct client *client, struct record *rec)
+{
+	client->id = atoi(response_keyval_get(rec, "id"));
+	client->hostname = strdup(response_keyval_get(rec, "hostname"));
+	client->username = strdup(response_keyval_get(rec, "username"));
+	client->state = strdup(response_keyval_get(rec, "state"));
+	client->pid = atoi(response_keyval_get(rec, "pid"));
+	client->uptime = strdup(response_keyval_get(rec, "uptime"));
+	client->ip = strdup(response_keyval_get(rec, "ip"));
 }

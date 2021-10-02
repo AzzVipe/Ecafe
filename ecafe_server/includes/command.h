@@ -7,6 +7,7 @@ struct command {
 	char *cmd;
 	char *uri;
 	int  (*req_handle)(struct request *req);
+	int  (*req_handle_special)(struct request *req, int connfd);
 	int  (*res_handle)(struct response *res);
 	int  (*res_handle_special)(struct response *res, int connfd);
 };

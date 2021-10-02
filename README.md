@@ -5,6 +5,8 @@
 * `ecafe_ping` - Ping client
 * `ecafe_action` - Perform action on client
 * `ecafe_poweroff` - Poweroff client system
+* `ecafe_screenshot` - Screenshots client system
+* `ecafe_notification` - Sends notification to client
 
 ## Dependencies
 * `notify-send` - pamac install 

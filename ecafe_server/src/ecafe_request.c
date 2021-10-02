@@ -97,26 +97,6 @@ int ecafe_request_notification(struct request *req)
 	return 0;
 }
 
-int ecafe_request_clientall(struct request *req)
-{
-	char uri[] = "/clientall";
-
-	request_type_set(req, REQ_TYPE_POST);
-	request_uri_set(req, uri);
-
-	return 0;
-}
-
-int ecafe_request_client(struct request *req)
-{
-	char uri[] = "/client";
-
-	request_type_set(req, REQ_TYPE_POST);
-	request_uri_set(req, uri);
-
-	return 0;
-}
-
 int ecafe_request_send(struct request *req, int connfd)
 {
 	int nbytes;

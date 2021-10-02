@@ -375,6 +375,7 @@ int response_parse(char *buf, size_t size, struct response *res)
 			free(key);
 			free(value);
 			ptr += 1; /* ptr points to nex key of the record */
+			prev = ptr;
 		}
 		response_record_push(res, &rec);
 		rec.nkeyvals = 0; /* reset record so that rec can be reused */

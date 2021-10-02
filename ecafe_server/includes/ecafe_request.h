@@ -16,8 +16,6 @@
 
 /* Server Requests */
 
-int ecafe_request_clientall(struct request *req);
-int ecafe_request_client(struct request *req);
 int ecafe_request_lock(struct request *req);
 int ecafe_request_unlock(struct request *req);
 int ecafe_request_action(struct request *req);
@@ -28,6 +26,7 @@ int ecafe_request_screenshot(struct request *req);
 int ecafe_request_notification(struct request *req);
 int ecafe_request_getdetails(struct request *req);
 
+// int ecafe_request_handle(char *buf, int client);
 int ecafe_request_send(struct request *req, int connfd);
 int ecafe_request_recv(int connfd, struct request *req);
 

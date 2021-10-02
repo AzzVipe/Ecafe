@@ -31,10 +31,10 @@ int ecafe_request_unlock(struct request *req, struct response *res)
 	if (req == NULL || res == NULL)
 		return -1;
 
-	if(system_linux_unlock() == -1) {
-		response_status_set(res, RES_STATUS_ERROR);
-		return -1;
-	}
+	// if(system_linux_unlock() == -1) {
+	// 	response_status_set(res, RES_STATUS_ERROR);
+	// 	return -1;
+	// }
 
 	response_status_set(res, RES_STATUS_CREATED);
 
@@ -134,27 +134,53 @@ int ecafe_request_poweroff(struct request *req, struct response *res)
 
 int ecafe_request_getdetails(struct request *req, struct response *res)
 {
+	uid_t uid;
 	pid_t pid;
-	char hostname[1024], buf[1024];
+	char hostname[1024], username[1024], buf[1024];
+	struct passwd *info;
+	struct sysinfo sys_info;
 
 	if (req == NULL || res == NULL)
 		return -1;
 
-	if (gethostname(hostname, 1024) == -1) {
-			strcpy(hostname, "*");
+	uid = geteuid();
+	if ((info = getpwuid(uid)) == NULL) {
+		strcpy(username, "*");
+	} else {
+		strcpy(username, info->pw_name);
 	}
+
+	if (gethostname(hostname, 1024) == -1)
+		strcpy(hostname, "*");
 
 	if (response_record_keyval_set(res, 0, "hostname", hostname) == -1) {
 		fprintf(stderr, "response_record_keyval_set : error\n");
 		response_status_set(res, RES_STATUS_ERROR);
-		
+		return -1;
+	}
+
+	if (response_record_keyval_set(res, 1, "username", username) == -1) {
+		fprintf(stderr, "response_record_keyval_set : error\n");
+		response_status_set(res, RES_STATUS_ERROR);
 		return -1;
 	}
 
 	pid = getpid();
 	sprintf(buf, "%d", pid);
 	
-	if (response_record_keyval_set(res, 1, "pid", buf) == -1) {
+	if (response_record_keyval_set(res, 2, "pid", buf) == -1) {
+		fprintf(stderr, "response_record_keyval_set : pid error\n");
+		response_status_set(res, RES_STATUS_ERROR);
+		
+		return -1;
+	}
+
+	if(sysinfo(&sys_info) != 0)
+		perror("sysinfo");
+
+	sprintf(buf, "%ld", sys_info.uptime);
+	
+	if (response_record_keyval_set(res, 3, "uptime", buf) == -1) {
 		fprintf(stderr, "response_record_keyval_set : pid error\n");
 		response_status_set(res, RES_STATUS_ERROR);
 		
@@ -168,7 +194,7 @@ int ecafe_request_getdetails(struct request *req, struct response *res)
 
 int ecafe_request_screenshot(struct request *req, struct response *res, int connfd)
 {
-	int nbytes, rv;
+	int rv;
 	int imgp, img_size;
 	char img_buf[1024 * 1024]; /* 1 MB */
 	char img_ssize[24];

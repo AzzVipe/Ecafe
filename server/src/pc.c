@@ -7,7 +7,9 @@
 #include <client.h>
 
 static int	prepare_ecafe_request(struct http_request *, struct request *);
+static void prepare_client_json(struct kore_buf *buf, const char *client_json_format, struct client *client);
 static void get_file_content(const char *filepath, struct kore_buf *result);
+
 int		page_pc_index(struct http_request *);
 int		page_pc_show(struct http_request *);
 int		page_pc_lock(struct http_request *);
@@ -22,29 +24,27 @@ int		page_pc_poweroff(struct http_request *);
 int
 page_pc_index(struct http_request *req)
 {
-	struct kore_buf *buf;
-	const char *client_json_format = "{\"id\": %d, \"name\": \"%s\", \"ip\": \"%s\", \"pid\": %d}";
 	int ret;
+	struct kore_buf *buf;
+	const char *client_json_format = "{\"id\": %d, \"hostname\": \"%s\", \"username\": \"%s\", \"status\": \"%s\", \"uptime\": \"%s\", \"ip\": \"%s\", \"pid\": %d}";
 	struct client **clients;
 	// char *res_error = "{\"message\": \"Failed to fetch clients\"}";
 
-	if ((ret = ecafe_clientall(&clients)) == -1) {
+	if ((ret = ecafe_clientall(&clients)) == -1) 
 		kore_log(LOG_ERR, "Failed to process fetch clients");
-	}
-
+	
 	buf = kore_buf_alloc(1024);
 	kore_buf_appendf(buf, "{ \"clients\": [");
+
 	for (int i = 0; i < ret; ++i) {
 		client_dump(clients[i]);
-		kore_buf_appendf(buf, client_json_format,
-			clients[i]->id,
-			clients[i]->name,
-			client_ipstr(clients[i]),
-			clients[i]->pid);
+		prepare_client_json(buf, client_json_format, clients[i]);
+
 		if (i != ret - 1) {
 			kore_buf_appendf(buf, ", ");
 		}
 	}
+
 	kore_buf_appendf(buf, "]}");
 
 	http_response_header(req, "content-type", "application/json");
@@ -57,11 +57,30 @@ page_pc_index(struct http_request *req)
 int
 page_pc_show(struct http_request *req)
 {
-	int id = 0;
+	int ret, id = 0;
+	struct kore_buf *buf;
+	const char *client_json_format = "{\"id\": %d, \"hostname\": \"%s\", \"username\": \"%s\", \"status\": \"%s\", \"uptime\": \"%s\", \"ip\": \"%s\", \"pid\": %d}";
+	struct client client = {};
+	// char *res_error = "{\"message\": \"Failed to fetch client\"}";
 
 	http_populate_get(req);
 	http_argument_get_int32(req, "id", &id);
 	kore_log(LOG_INFO, "You have requested for client #%d", id);
+	client.id = id;
+
+	if ((ret = ecafe_client(&client)) == -1) 
+		kore_log(LOG_ERR, "Failed to process fetch client");
+
+	buf = kore_buf_alloc(1024);
+
+	kore_buf_appendf(buf, "{ \"client\":");
+	client_dump(&client);
+	prepare_client_json(buf, client_json_format, &client);
+	kore_buf_appendf(buf, "}");
+
+	http_response_header(req, "content-type", "application/json");
+	http_response(req, HTTP_STATUS_OK, buf->data, buf->offset);
+	kore_buf_free(buf);
 
 	return dynamic_html_server(req, "assets/pc/show.html");
 }
@@ -300,4 +319,17 @@ get_file_content(const char *filepath, struct kore_buf *result)
 		kore_buf_append(result, buf, nbytes);
 
 	close(fd);
+}
+
+static void 
+prepare_client_json(struct kore_buf *buf, const char *client_json_format, struct client *client)
+{
+	kore_buf_appendf(buf, client_json_format,
+		client->id,
+		client->hostname,
+		client->username,
+		client->state,
+		client->uptime,
+		client->ip,
+		client->pid);
 }

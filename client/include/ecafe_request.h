@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <pwd.h>
+#include <sys/sysinfo.h>
+
 #include <request.h>
 #include <response.h>
 #include <easyio.h>

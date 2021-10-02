@@ -3,6 +3,8 @@
 #include <response.h>
 #include <assert.h>
 
+#include <ecafe.h>
+
 #undef SERVER_PORT 
 #define SERVER_PORT "4040"
 
@@ -42,7 +44,7 @@ int main(int argc, char *argv[])
 	ip = argv[1];
 	fprintf(stderr, "IP : %s\nPort : %s\n", ip, SERVER_PORT);
 
-	if ((sockfd = Tcp_connect(ip, SERVER_PORT)) < 0) {
+	if ((sockfd = Uxd_connect(UNIXPATH)) < 0) {
 		fprintf(stderr, "Error: Tcp_connect\n");
 		exit(1);
 	}
