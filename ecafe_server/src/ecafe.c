@@ -2,8 +2,6 @@
 #include <ecafe.h>
 #include <command.h>
 
-static void ecafe_client_prepare(struct response *res, struct client *temp);
-
 int ecafe_request_handle(char *buf, int connfd) /* Handling requests from server */
 {
 	int id, rv, index;
@@ -119,7 +117,7 @@ int ecafe_clientall(struct request *req, int connfd)
 	nclients = client_getall(&clients);
 
 	for (int i = 0; i < nclients; ++i) {
-		ecafe_client_prepare(&res, clients[i]);
+		ecafe_response_prepare_client(&res, clients[i]);
 	}
 	
 	response_header_set(&res, "uri", "/clientall");
@@ -130,44 +128,41 @@ int ecafe_clientall(struct request *req, int connfd)
 
 int ecafe_client(struct request *req, int connfd)
 {
+	int id, ret;
 	struct client *client;
 	struct response res = {};
-	int id;
 
+	ret = -1;
 	if (req == NULL)
-		return -1;
+		goto cleanup;
 	
 	id = atoi(request_param_get(req, "id"));
-	client = client_get(id);
 
-	ecafe_client_prepare(&res, client);
+	if ((client = client_get(id)) == NULL)
+		goto cleanup;
+
+	if (ecafe_request_client(req) == -1) 
+		goto cleanup;
+
+	printf("/client\n----------------------\n\n");
+
+	printf("Sending request to client......\n");
 	
-	response_header_set(&res, "uri", "/client");
-	response_status_set(&res, RES_STATUS_OK);
+	if ((ecafe_request_send(req, client->fd)) == -1) {
+		goto cleanup;
+	}
 
-	return ecafe_response_send(&res, connfd);
-}
+	ret = 0;
 
-static void ecafe_client_prepare(struct response *res, struct client *temp)
-{
-	struct record rec = {};
-	char buf[256];
-
-	sprintf(buf, "%d", temp->id);
-	response_keyval_push(&rec, "id", buf);
-	response_keyval_push(&rec, "hostname", temp->hostname);
-	response_keyval_push(&rec, "username", temp->username);
-	response_keyval_push(&rec, "uptime", temp->uptime);
+cleanup:
+	if (ret == -1) {
+		response_header_set(&res, "uri", "/client");
+		response_status_set(&res, RES_STATUS_ERROR);
+		ecafe_response_send(&res, connfd);
+	}
 	
-	sprintf(buf, "%s", temp->is_online ? "online" : "offline");
-	response_keyval_push(&rec, "state", buf);
+	return ret;
 	
-	sprintf(buf, "%d", temp->pid);
-	response_keyval_push(&rec, "pid", buf);
-
-	response_keyval_push(&rec, "ip", temp->ip);
-
-	response_record_push(res, &rec);
 }
 
 void ecafe_log_error(int Errno, char *filename, int line)

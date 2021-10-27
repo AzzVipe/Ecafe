@@ -17,7 +17,7 @@ int main(void)
 	int c_listenfd, s_listenfd, c_connfd, s_connfd, maxfd; /*s prefix is for server and c prefix is for client*/
 	int nclients = 0, id = 0, nready, nbytes;
 	fd_set allset, rset;
-	socklen_t c_socklen,s_socklen, cliaddr_len, servaddr_len;
+	socklen_t c_socklen, s_socklen, cliaddr_len, servaddr_len;
 
 	s_listenfd = Uxd_listen(UNIXPATH, 0);
 	c_listenfd = Tcp_listen("0.0.0.0", SERVER_PORT, &c_socklen);

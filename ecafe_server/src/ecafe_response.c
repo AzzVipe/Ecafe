@@ -5,6 +5,129 @@
 static int ecafe_response_screenshot_client(char *img_buf, int size, struct response *res);
 static int ecafe_response_screenshot_server(char *img_buf, int img_size, struct response *res, int connfd);
 
+int ecafe_response_lock(struct response *res)
+{
+	struct client *client;
+
+	if (ecafe_response_print(res, stderr) == -1)
+		return -1;
+
+	client = client_active_get();
+	client->is_online = false;
+
+	return 0;
+}
+
+int ecafe_response_unlock(struct response *res)
+{
+	struct client *client;
+	fprintf(stderr, "%s\n", res->body);
+
+	if (ecafe_response_print(res, stderr) == -1)
+		return -1;
+
+	client = client_active_get();
+	client->is_online = true;
+
+	return 0;
+}
+
+int ecafe_response_message(struct response *res)
+{
+	if (ecafe_response_print(res, stderr) == -1)
+		return -1;
+
+	return 0;
+}
+
+int ecafe_response_action(struct response *res)
+{
+	if (ecafe_response_print(res, stderr) == -1)
+		return -1;
+
+	return 0;
+}
+
+int ecafe_response_ping(struct response *res)
+{
+	if (ecafe_response_print(res, stderr) == -1)
+		return -1;
+
+	return 0;
+}
+
+int ecafe_response_poweroff(struct response *res)
+{
+	if (ecafe_response_print(res, stderr) == -1)
+		return -1;
+
+	return 0;
+}
+
+int ecafe_response_getdetails(struct response *res, int connfd)
+{
+	struct client *client;
+	char *hostname, *pid, *username, *uptime;
+	struct record *rec = &(res->records[0]);
+
+	if (ecafe_response_print(res, stderr) == -1)
+		return -1;
+
+	hostname = response_keyval_get(rec, "hostname");
+	username = response_keyval_get(rec, "username");
+	pid      = response_keyval_get(rec, "pid");
+	uptime   = response_keyval_get(rec, "uptime");
+
+	client = client_active_get();
+	client->hostname = strdup(hostname);
+	client->username = strdup(username);
+	client->uptime = strdup(uptime);
+	client->pid = atoi(pid);
+
+	return 0;
+}
+
+int ecafe_response_screenshot(struct response *res, int connfd)
+{
+	int img_size = 0;
+	char img_buf[1024 * 1024];
+
+	/* Receiving image from client */
+	if ((img_size = ecafe_response_screenshot_client(img_buf, sizeof(img_buf), res)) == -1 ) 
+		return -1;
+
+	printf("Sending response to server......\n");
+
+	return ecafe_response_screenshot_server(img_buf, img_size, res, connfd);
+	
+}
+
+int ecafe_response_client(struct response *res)
+{
+	struct client *client;
+
+	if (ecafe_response_getdetails(res, 0) == -1) {
+		response_status_set(res, RES_STATUS_OK);
+		return -1;
+	}
+	
+	client = client_active_get();
+
+	res->nrecords = 0;
+	ecafe_response_prepare_client(res, client);
+	response_status_set(res, RES_STATUS_OK);
+
+	return 0;
+}
+
+int ecafe_response_notification(struct response *res)
+{
+	if (ecafe_response_print(res, stderr) == -1)
+		return -1;
+
+	return 0;
+}
+
 int ecafe_response_send(struct response *res, int connfd)
 {
 	int nbytes = 0;
@@ -71,108 +194,26 @@ int ecafe_response_print(struct response *res, FILE *fp)
 	return -1;
 }
 
-int ecafe_response_lock(struct response *res)
+void ecafe_response_prepare_client(struct response *res, struct client *temp)
 {
-	struct client *client;
-
-	if (ecafe_response_print(res, stderr) == -1)
-		return -1;
-
-	client = client_active_get();
-	client->is_online = false;
-
-	return 0;
-}
-
-int ecafe_response_unlock(struct response *res)
-{
-	struct client *client;
-	fprintf(stderr, "%s\n", res->body);
-
-	if (ecafe_response_print(res, stderr) == -1)
-		return -1;
-
-	client = client_active_get();
-	client->is_online = true;
-
-	return 0;
-}
-
-int ecafe_response_message(struct response *res)
-{
-	if (ecafe_response_print(res, stderr) == -1)
-		return -1;
-
-	return 0;
-}
-
-int ecafe_response_action(struct response *res)
-{
-	if (ecafe_response_print(res, stderr) == -1)
-		return -1;
-
-	return 0;
-}
-
-int ecafe_response_ping(struct response *res)
-{
-	if (ecafe_response_print(res, stderr) == -1)
-		return -1;
-
-	return 0;
-}
-
-int ecafe_response_poweroff(struct response *res)
-{
-	if (ecafe_response_print(res, stderr) == -1)
-		return -1;
-
-	return 0;
-}
-
-int ecafe_response_getdetails(struct response *res, int connfd)
-{
-	struct client *client;
-	char *hostname, *pid, *username, *uptime;
-
-	if (ecafe_response_print(res, stderr) == -1)
-		return -1;
-
-	hostname = response_keyval_get(&(res->records[0]), "hostname");
-	username = response_keyval_get(&res->records[1], "username");
-	pid      = response_keyval_get(&res->records[2], "pid");
-	uptime   = response_keyval_get(&res->records[3], "uptime");
-
-	client = client_active_get();
-	client->hostname = strdup(hostname);
-	client->username = strdup(username);
-	client->uptime = strdup(uptime);
-	client->pid = atoi(pid);
-
-	return 0;
-}
-
-int ecafe_response_screenshot(struct response *res, int connfd)
-{
-	int img_size = 0;
-	char img_buf[1024 * 1024];
-
-	/* Receiving image from client */
-	if ((img_size = ecafe_response_screenshot_client(img_buf, sizeof(img_buf), res)) == -1 ) 
-		return -1;
-
-	printf("Sending response to server......\n");
-
-	return ecafe_response_screenshot_server(img_buf, img_size, res, connfd);
+	struct record rec = {};
+	char buf[256];
 	
-}
+	sprintf(buf, "%d", temp->id);
+	response_keyval_push(&rec, "id", buf);
+	response_keyval_push(&rec, "hostname", temp->hostname);
+	response_keyval_push(&rec, "username", temp->username);
+	response_keyval_push(&rec, "uptime", temp->uptime);
+	
+	sprintf(buf, "%s", temp->is_online ? "online" : "offline");
+	response_keyval_push(&rec, "state", buf);
+	
+	sprintf(buf, "%d", temp->pid);
+	response_keyval_push(&rec, "pid", buf);
 
-int ecafe_response_notification(struct response *res)
-{
-	if (ecafe_response_print(res, stderr) == -1)
-		return -1;
+	response_keyval_push(&rec, "ip", temp->ip);
 
-	return 0;
+	response_record_push(res, &rec);
 }
 
 static int ecafe_response_screenshot_client(char *img_buf, int size, struct response *res)

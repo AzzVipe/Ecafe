@@ -73,5 +73,4 @@ int ecafe_getdetails(struct client *cli_info);
 int ecafe_clientall(struct request *req, int connfd);
 int ecafe_client(struct request *req, int connfd);
 
-
 #endif

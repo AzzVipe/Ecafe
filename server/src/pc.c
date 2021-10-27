@@ -92,6 +92,7 @@ page_pc_lock(struct http_request *req)
 	char *res_error = "{\"message\": \"Failed to lock pc\"}";
 	char *res = "{\"message\": \"pc locked successfully\"}";
 
+	http_response_header(req, "content-type", "application/json");
 	request_uri_set(&ecafe_req, "/lock");
 	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
 		http_response(req, 400, NULL, 0);
@@ -114,6 +115,7 @@ page_pc_unlock(struct http_request *req)
 	char *res_error = "{\"message\": \"Failed to unlock pc\"}";
 	char *res = "{\"message\": \"pc unlocked successfully\"}";
 
+	http_response_header(req, "content-type", "application/json");
 	request_uri_set(&ecafe_req, "/unlock");
 	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
 		http_response(req, 400, NULL, 0);
@@ -137,6 +139,7 @@ page_pc_message(struct http_request *req)
 	char *res_error = "{\"message\": \"Failed to send message\"}";
 	char *res = "{\"message\": \"message sent successfully\"}";
 
+	http_response_header(req, "content-type", "application/json");
 	request_uri_set(&ecafe_req, "/message");
 	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
 		http_response(req, 400, NULL, 0);
@@ -167,6 +170,7 @@ page_pc_ping(struct http_request *req)
 	char *res_error = "{\"message\": \"Failed to send ping request\"}";
 	char *res = "{\"message\": \"ping reply came back from cleint\"}";
 
+	http_response_header(req, "content-type", "application/json");
 	request_uri_set(&ecafe_req, "/ping");
 	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
 		http_response(req, 400, NULL, 0);
@@ -189,6 +193,7 @@ page_pc_action(struct http_request *req)
 	char *res_error = "{\"message\": \"Failed to perform action\"}";
 	char *res = "{\"message\": \"Action performed successfully\"}";
 
+	http_response_header(req, "content-type", "application/json");
 	request_uri_set(&ecafe_req, "/action");
 	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
 		http_response(req, 400, NULL, 0);
@@ -211,6 +216,7 @@ page_pc_poweroff(struct http_request *req)
 	char *res_error = "{\"message\": \"Failed to power off pc\"}";
 	char *res = "{\"message\": \"PC powered down successfully\"}";
 
+	http_response_header(req, "content-type", "application/json");
 	request_uri_set(&ecafe_req, "/poweroff");
 	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
 		http_response(req, 400, NULL, 0);
@@ -235,10 +241,12 @@ page_pc_screenshot(struct http_request *req)
 
 	request_uri_set(&ecafe_req, "/screenshot");
 	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
+		http_response_header(req, "content-type", "application/json");
 		http_response(req, 400, NULL, 0);
 		return (KORE_RESULT_OK);
 	}
 	if (ecafe_screenshot(&ecafe_req) == -1) {
+		http_response_header(req, "content-type", "application/json");
 		http_response(req, HTTP_STATUS_OK, res_error, strlen(res_error));
 		kore_log(LOG_ERR, "Failed to process screenshot request");
 		goto cleanup;

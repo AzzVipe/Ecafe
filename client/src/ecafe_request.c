@@ -139,6 +139,7 @@ int ecafe_request_getdetails(struct request *req, struct response *res)
 	char hostname[1024], username[1024], buf[1024];
 	struct passwd *info;
 	struct sysinfo sys_info;
+	struct record rec = {};
 
 	if (req == NULL || res == NULL)
 		return -1;
@@ -153,40 +154,47 @@ int ecafe_request_getdetails(struct request *req, struct response *res)
 	if (gethostname(hostname, 1024) == -1)
 		strcpy(hostname, "*");
 
-	if (response_record_keyval_set(res, 0, "hostname", hostname) == -1) {
-		fprintf(stderr, "response_record_keyval_set : error\n");
-		response_status_set(res, RES_STATUS_ERROR);
-		return -1;
-	}
+	response_keyval_push(&rec, "hostname", hostname);
+	// if (response_record_keyval_set(res, 0, "hostname", hostname) == -1) {
+	// 	fprintf(stderr, "response_record_keyval_set : error\n");
+	// 	response_status_set(res, RES_STATUS_ERROR);
+	// 	return -1;
+	// }
 
-	if (response_record_keyval_set(res, 1, "username", username) == -1) {
-		fprintf(stderr, "response_record_keyval_set : error\n");
-		response_status_set(res, RES_STATUS_ERROR);
-		return -1;
-	}
+	response_keyval_push(&rec, "username", username);
+	// if (response_record_keyval_set(res, 1, "username", username) == -1) {
+	// 	fprintf(stderr, "response_record_keyval_set : error\n");
+	// 	response_status_set(res, RES_STATUS_ERROR);
+	// 	return -1;
+	// }
 
 	pid = getpid();
 	sprintf(buf, "%d", pid);
-	
-	if (response_record_keyval_set(res, 2, "pid", buf) == -1) {
-		fprintf(stderr, "response_record_keyval_set : pid error\n");
-		response_status_set(res, RES_STATUS_ERROR);
+	response_keyval_push(&rec, "pid", buf);
+
+	// if (response_record_keyval_set(res, 2, "pid", buf) == -1) {
+	// 	fprintf(stderr, "response_record_keyval_set : pid error\n");
+	// 	response_status_set(res, RES_STATUS_ERROR);
 		
-		return -1;
+	// 	return -1;
+	// }
+
+	if(sysinfo(&sys_info) == 0) {
+		sprintf(buf, "%ld", sys_info.uptime);
+		response_keyval_push(&rec, "uptime", buf);
+	} else {
+		response_keyval_push(&rec, "uptime", "0");
 	}
 
-	if(sysinfo(&sys_info) != 0)
-		perror("sysinfo");
-
-	sprintf(buf, "%ld", sys_info.uptime);
 	
-	if (response_record_keyval_set(res, 3, "uptime", buf) == -1) {
-		fprintf(stderr, "response_record_keyval_set : pid error\n");
-		response_status_set(res, RES_STATUS_ERROR);
+	// if (response_record_keyval_set(res, 3, "uptime", buf) == -1) {
+	// 	fprintf(stderr, "response_record_keyval_set : pid error\n");
+	// 	response_status_set(res, RES_STATUS_ERROR);
 		
-		return -1;
-	}
-
+	// 	return -1;
+	// }
+	
+	response_record_push(res, &rec);
 	response_status_set(res, RES_STATUS_OK);
 
 	return 0;

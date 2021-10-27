@@ -2,6 +2,7 @@
 #define __COMMAND_H_ 
 
 #include <ecafe.h>
+#include <macros.h>
 
 struct command {
 	char *cmd;

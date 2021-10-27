@@ -127,4 +127,3 @@ void client_active_unset(void)
 {
 	active_client = NULL;
 }
-
