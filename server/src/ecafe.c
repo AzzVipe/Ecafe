@@ -255,9 +255,10 @@ static void ecafe_clientall_populate(struct client ***clients, struct response *
 	}
 
 	for (int i = 0; i < res->nrecords; ++i) {
-		temp_array[i] = malloc(sizeof(struct client));
-		temp = temp_array[i];
-		ecafe_client_populate(temp, &(res->records[i]));
+		if ((temp_array[i] = calloc(1, sizeof(struct client)))) {
+			temp = temp_array[i];
+			ecafe_client_populate(temp, &(res->records[i]));
+		}
 	}
 
 	*clients = temp_array;
@@ -265,11 +266,20 @@ static void ecafe_clientall_populate(struct client ***clients, struct response *
 
 static void ecafe_client_populate(struct client *client, struct record *rec)
 {
-	client->id = atoi(response_keyval_get(rec, "id"));
-	client->hostname = strdup(response_keyval_get(rec, "hostname"));
-	client->username = strdup(response_keyval_get(rec, "username"));
-	client->state = strdup(response_keyval_get(rec, "state"));
-	client->pid = atoi(response_keyval_get(rec, "pid"));
-	client->uptime = strdup(response_keyval_get(rec, "uptime"));
-	client->ip = strdup(response_keyval_get(rec, "ip"));
+	char *ptr;
+
+	if ((ptr = response_keyval_get(rec, "id")))
+		client->id = atoi(ptr);
+	if ((ptr = response_keyval_get(rec, "hostname")))
+		client->hostname = strdup(ptr);
+	if ((ptr = response_keyval_get(rec, "username")))
+		client->username = strdup(ptr);
+	if ((ptr = response_keyval_get(rec, "state")))
+		client->state = strdup(ptr);
+	if ((ptr = response_keyval_get(rec, "pid")))
+		client->pid = atoi(ptr);
+	if ((ptr = response_keyval_get(rec, "uptime")))
+		client->uptime = strdup(ptr);
+	if ((ptr = response_keyval_get(rec, "ip")))
+		client->ip = strdup(ptr);
 }
