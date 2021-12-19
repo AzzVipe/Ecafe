@@ -1,12 +1,15 @@
 # ECafe
 
-## Video demo of the App
-![https://github.com/imskm/ecafe/demo/ecafe-demo-video.mkv](/demo/ecafe-demo-video.mkv)
+## Demo of the App
+![](/demo/ecafe-demo-video.gif)
 
 ## Screenshots
 ![](/demo/screenshot-01.png)
 ![](/demo/screenshot-02.png)
 ![](/demo/screenshot-03.png)
+
+## Video demo of the App
+![https://github.com/imskm/ecafe/demo/ecafe-demo-video.mkv](/demo/ecafe-demo-video.mkv)
 
 # APIs
 * `ecafe_lock` - Lock client
