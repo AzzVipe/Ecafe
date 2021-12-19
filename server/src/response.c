@@ -26,6 +26,26 @@ static ssize_t response_body_append_binary(struct response *res, char *buf, size
 
 void response_header_set(struct response *res, const char *key, const char *value)
 {
+	int i;
+	size_t len = response_header_size(res);
+
+	for (i = 0; i < (int) len; ++i) {
+		if (strcmp(res->header_keys[i], key) == 0)
+			break;
+	}
+
+	// Found the key
+	if (i != (int) len) {
+		free(res->header_keys[i]);
+		free(res->header_values[i]);
+		// Shift elements left
+		for (; i < (int) len - 1; ++i) {
+			res->header_keys[i] = res->header_keys[i + 1];
+			res->header_values[i] = res->header_values[i + 1];
+		}
+		res->nheader--;
+	}
+
 	if (res->nheader == RES_MAX_PARAM_LEN - 1)
 		return;
 
@@ -197,8 +217,10 @@ int response_prepare(struct response *res, char *buf, size_t size)
 	}
 
 	/* Marking header end and starting of response body */
-	if (bufi < size) buf[bufi++] = '\r';
-	if (bufi < size) buf[bufi++] = '\n';
+	if (res->nrecords) {
+		if (bufi < size) buf[bufi++] = '\r';
+		if (bufi < size) buf[bufi++] = '\n';
+	}
 
 	if (res->isbinary) {
 		return response_body_append_binary(res, buf, size, bufi);
@@ -252,106 +274,119 @@ int response_prepare(struct response *res, char *buf, size_t size)
 
 int response_parse(char *buf, size_t size, struct response *res)
 {
-	int ret = 0;
-	char *key, *val, *ptr, *prev, *last, *bufcp, header_line[512];
+	char *last, *ptr, *prev, *key, *value;
 	struct record rec = {0};
 
-	buf[size] = 0;
-	bufcp = strndup(buf, size);
-	last = &bufcp[size - 1];
-	if (!bufcp)
-		return -1;
-	
-	/* Extract status code */
-	if ((ptr = strchr(bufcp, ' ')) == NULL) {
-		fprintf(stderr, "response_parse: no response status code found\n");
+	ptr 	= buf;
+	last 	= &buf[size - 1];
+
+	/* 1. Extract response status (first line of header) */
+	if ((ptr = strchr(ptr, '\r')) == NULL) {
+		fprintf(stderr, "%s: status message not found\n", __func__);
 		return -1;
 	}
-	res->status = atoi(bufcp);
+	res->status = strtol(buf, NULL, 10);
 	res->msg = response_status_msg_get(res);
-	ptr = strchr(ptr, '\r');
 
-	// Check eampty header
-	if (ptr && (strncmp(ptr, "\r\n\r\n", 4) == 0)) {
-		ptr += 4;
-	} else if (ptr) {
-		/* Extract headers */
-		ptr += 2;
+	/* 1.1. Check if header has ended 
+	 *   "\r\n\r\n" is the seperator for header and body */
+	if (strncmp(ptr, "\r\n\r\n", 4) == 0) {
+		fprintf(stderr, "%s: empty header found\n", __func__);
+		return 0; /* It is not an error (header and body are optional) */
+	} else if (strncmp(ptr, "\r\n", 2) != 0) {
+		fprintf(stderr, "%s: invalid header, status line ending is invalid\n", __func__);
+		return -1;
+	}
+
+	/* 1.2. ptr points to first header key */
+	ptr += 2;
+
+	/* 2. Extract header */
+	prev = ptr;
+	while (ptr < last) {
 		prev = ptr;
+		if ((ptr = strchr(ptr, RES_HEADER_DELIM)) == NULL) {
+			fprintf(stderr, "%s:%d: invalid header\n", __func__, __LINE__);
+			return -1;
+		}
+		key = strndup(prev, ptr - prev);
+		prev = ptr;
+
+		if ((ptr = strchr(ptr, '\r')) == NULL) {
+			fprintf(stderr, "%s:%d: invalid header\n", __func__, __LINE__);
+			return -1;
+		}
+		value = strndup(prev + 1, ptr - prev - 1);
+		str_trim(value);
+
+		response_header_set(res, key, value);
+		free(key);
+		free(value);
+
+		/* Check if header ended, if so then break otherwise update the prev and ptr pointers */
+		if (strncmp(ptr, "\r\n\r\n", 4) == 0) {
+			ptr += 4;
+			break;
+		} else if (strncmp(ptr, "\r\n", 2) != 0) {
+			fprintf(stderr, "%s:%d: invalid header, status line ending is invalid\n", __func__, __LINE__);
+			return -1;
+		}
+
+		ptr += 2;
+	}
+	/* @TODO The binary content handling */
+
+	/* 3. Extract body */
+	while (ptr < last) {
+		prev = ptr;
+		if ((ptr = strchr(ptr, '\r')) == NULL || ptr >= last) {
+			fprintf(stderr, "%s:%d: invalid record termination\n", __func__, __LINE__);
+			return -1;
+		}
+		/* tmp = points to end of the record */
+		ptr = prev;
 		while (1) {
-			ptr = strchr(ptr, '\r');
-			if (ptr && (strncmp(ptr, "\r\n\r\n", 4) == 0)) {
-				strncpy(header_line, prev, ptr - prev);
-				response_extract_key_value(res, header_line, RES_HEADER_DELIM);
-				break;
+			/* If there are no more key/value then the body of the response is invalid */
+			if ((ptr = strchr(ptr, '=')) == NULL) {
+				fprintf(stderr, "%s:%d: invalid keyval record\n", __func__, __LINE__);
+				return -1;
 			}
-			strncpy(header_line, prev, ptr - prev);
-			response_extract_key_value(res, header_line, RES_HEADER_DELIM);
-			ptr += 2;
+			key = strndup(prev, ptr - prev);
+			prev = ptr; /* prev = points to '=' */
+			if ((ptr = strchr(ptr, '\n')) == NULL) {
+				free(key);
+				fprintf(stderr, "%s:%d: invalid key value format\n", __func__, __LINE__);
+				return -1;
+			}
+
+			/* If ptr - 1 char is '\r' then it is end of record so handle the
+			 * '\r' char in value and break out of loop otherwise handle value normally */
+			if (*(ptr - 1) == '\r') {
+				ptr = ptr - 1;
+				value = strndup(prev + 1, ptr - prev - 1);
+				response_keyval_push(&rec, key, value);
+				free(key);
+				free(value);
+				break;
+			} else {
+				value = strndup(prev + 1, ptr - prev - 1);
+				response_keyval_push(&rec, key, value);
+			}
+			free(key);
+			free(value);
+			ptr += 1; /* ptr points to nex key of the record */
 			prev = ptr;
 		}
+		response_record_push(res, &rec);
+		rec.nkeyvals = 0; /* reset record so that rec can be reused */
+
+		/* If this is the last record of the body then break */
+		if (strncmp(ptr, "\r\n\r\n", 4) == 0)
+			break;
+		ptr += 2; /* moving ptr to point to next record */
 	}
 
-	/* If current and next char is '\r' and '\n' respectively then we have
-	 * reached end of record */
-	if (ptr < last && *ptr == '\r' && *(ptr + 1) == '\n')
-		ptr = last;
-
-	/* If response body has binary data then call binary body parser */
-	if (response_header_get(res, "content-type") &&
-		(strcmp(response_header_get(res, "content-type"), RES_HEADER_BINARY_VALUE) == 0))
-			return response_continue_parsing_binary(res, ptr);
-
-	/* Check response received is complete */
-	if (!response_iscomplete(bufcp, size))
-		return -1;
-
-	/* Extracting records */
-	while (ptr < last) {
-		/* extract key */
-		key = ptr;
-		while (ptr <= last && *ptr != '=')
-			++ptr;
-		/* If ptr does not point to '=' then key is missing */
-		if (*ptr != '=') {
-			fprintf(stderr, "response_parse: key expected here but something else given: %s\n", key);
-			ret = -1;
-			break;
-		}
-		*ptr = 0; /* terminate key with null-byte in place of '=' char */
-		++ptr;
-
-		/* extract value */
-		val = ptr;
-		while (ptr <= last && *ptr != '\n')
-			++ptr;
-		if (*ptr != '\n') {
-			fprintf(stderr, "response_parse: value expected here but something else given: %s\n", val);
-			ret = -1;
-			break;
-		}
-		*ptr = 0; /* terminate key with null-byte in place of '\n' char */
-		++ptr;
-
-
-		/* If this is the EOL that is end of single record, single end of
-		 * record marker is \r\n, then push the record in res */
-		if (*(ptr - 2) == '\r') {
-			*(ptr - 2) = 0; /* remove last char '\r' */
-			response_keyval_push(&rec, key, val);
-			response_record_push(res, &rec);
-			rec.nkeyvals = 0; /* reset record so that rec can be reused */
-		} else {
-			response_keyval_push(&rec, key, val);
-		}
-
-		/* If reached EOR (ie. '\r\n\r\n') then work is done */
-		if (ptr < last && *ptr == '\r' && *(ptr + 1) == '\n')
-			break;
-	}
-	free(bufcp);
-
-	return ret;
+	return 0;
 }
 
 
@@ -381,6 +416,17 @@ void response_dump(struct response *res)
 	/* Dump status code and message */
 	fprintf(stderr, "{\n");
 	fprintf(stderr, "    %d %s\n", res->status, res->msg);
+
+	/* Header structure */
+	fprintf(stderr, "    {\n");
+	for (int i = 0; i < res->nheader; ++i) {
+		fprintf(stderr, "        \"%s\": \"%s\"%s\n",
+				res->header_keys[i],
+				res->header_values[i],
+				(res->nheader == i + 1) ? "" : ",");
+	}
+	fprintf(stderr, "    }\n");
+
 	fprintf(stderr, "    [\n");
 
 	nrecords = res->nrecords;

@@ -21,12 +21,18 @@ int ecafe_request_handle(char *buf, int server)
 		return -1;
 	}
 
+	response_header_set(&res, "uri", uri);
+
+	if (commands[index].req_handle_special) {
+		return commands[index].req_handle_special(&req, &res, server);
+	}
+
 	if(commands[index].req_handle(&req, &res) == -1) {
 		fprintf(stderr, "request_handle : error\n");
 		return -1;
 	}
 
-	if (ecafe_response_send(server, &res)) {
+	if (ecafe_response_send(&res, server)) {
 		fprintf(stderr, "ecafe_response_send : error \n");
 		return -1;
 	}

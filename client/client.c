@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "ecafe_request_handle : error\n");
 				exit(EXIT_FAILURE);
 			}
+			printf("\n-----------------------------------------------\n\n");
 		}
 	}
 

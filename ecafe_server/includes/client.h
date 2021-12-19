@@ -31,9 +31,9 @@ struct client {
 	char *hostname;
 	char *username;
 	char *ip;
-	char *state;
 	char *uptime;
 	User *user;
+	bool is_online;
 	struct sockaddr_in addr;
 	struct timeval last_active_at;
 };

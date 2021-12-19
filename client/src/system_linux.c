@@ -33,7 +33,7 @@ int system_linux_notify(const char *title, const char *msg)
 	// @Danger : if message contains "" then bash will get confused (Escape the message first)
 
 	sprintf(buf, "notify-send --app-name=%s --expire-time=10000 \"%s\" \"%s\"", ECAFE_APPNAME, title, msg);
-	printf("%s\n", buf);
+	// printf("%s\n", buf);
 
 	return system(buf);
 }

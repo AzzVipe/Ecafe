@@ -1,7 +1,9 @@
 #include <ecafe_request.h>
 
-#define BLOCK   "block"
-#define UNBLOCK "unblock"
+#define APP_NAME "Ecafe"
+#define BLOCK    "block"
+#define UNBLOCK  "unblock"
+#define PARAM_STAGE  "stage"
 
 #define IMG_ADDR "/tmp/ecafe_screenshot.jpeg"
 
@@ -15,10 +17,10 @@ int ecafe_request_lock(struct request *req, struct response *res)
 	if (req == NULL || res == NULL)
 		return -1;
 
-	if(system_linux_lock() == -1) {
-		response_status_set(res, RES_STATUS_ERROR);
-		return -1;
-	}
+	// if(system_linux_lock() == -1) {
+	// 	response_status_set(res, RES_STATUS_ERROR);
+	// 	return -1;
+	// }
 	response_status_set(res, RES_STATUS_CREATED);
 
 	return 0;
@@ -29,10 +31,10 @@ int ecafe_request_unlock(struct request *req, struct response *res)
 	if (req == NULL || res == NULL)
 		return -1;
 
-	if(system_linux_unlock() == -1) {
-		response_status_set(res, RES_STATUS_ERROR);
-		return -1;
-	}
+	// if(system_linux_unlock() == -1) {
+	// 	response_status_set(res, RES_STATUS_ERROR);
+	// 	return -1;
+	// }
 
 	response_status_set(res, RES_STATUS_CREATED);
 
@@ -132,74 +134,155 @@ int ecafe_request_poweroff(struct request *req, struct response *res)
 
 int ecafe_request_getdetails(struct request *req, struct response *res)
 {
+	uid_t uid;
 	pid_t pid;
-	char hostname[1024], buf[1024];
+	char hostname[1024], username[1024], buf[1024];
+	struct passwd *info;
+	struct sysinfo sys_info;
+	struct record rec = {};
 
 	if (req == NULL || res == NULL)
 		return -1;
 
-	if (gethostname(hostname, 1024) == -1) {
-			strcpy(hostname, "*");
+	uid = geteuid();
+	if ((info = getpwuid(uid)) == NULL) {
+		strcpy(username, "*");
+	} else {
+		strcpy(username, info->pw_name);
 	}
 
-	if (response_record_keyval_set(res, 0, "hostname", hostname) == -1) {
-		fprintf(stderr, "response_record_keyval_set : error\n");
-		response_status_set(res, RES_STATUS_ERROR);
-		
-		return -1;
-	}
+	if (gethostname(hostname, 1024) == -1)
+		strcpy(hostname, "*");
+
+	response_keyval_push(&rec, "hostname", hostname);
+	// if (response_record_keyval_set(res, 0, "hostname", hostname) == -1) {
+	// 	fprintf(stderr, "response_record_keyval_set : error\n");
+	// 	response_status_set(res, RES_STATUS_ERROR);
+	// 	return -1;
+	// }
+
+	response_keyval_push(&rec, "username", username);
+	// if (response_record_keyval_set(res, 1, "username", username) == -1) {
+	// 	fprintf(stderr, "response_record_keyval_set : error\n");
+	// 	response_status_set(res, RES_STATUS_ERROR);
+	// 	return -1;
+	// }
 
 	pid = getpid();
 	sprintf(buf, "%d", pid);
-	
-	if (response_record_keyval_set(res, 1, "pid", buf) == -1) {
-		fprintf(stderr, "response_record_keyval_set : pid error\n");
-		response_status_set(res, RES_STATUS_ERROR);
+	response_keyval_push(&rec, "pid", buf);
+
+	// if (response_record_keyval_set(res, 2, "pid", buf) == -1) {
+	// 	fprintf(stderr, "response_record_keyval_set : pid error\n");
+	// 	response_status_set(res, RES_STATUS_ERROR);
 		
-		return -1;
+	// 	return -1;
+	// }
+
+	if(sysinfo(&sys_info) == 0) {
+		sprintf(buf, "%ld", sys_info.uptime);
+		response_keyval_push(&rec, "uptime", buf);
+	} else {
+		response_keyval_push(&rec, "uptime", "0");
 	}
 
+	
+	// if (response_record_keyval_set(res, 3, "uptime", buf) == -1) {
+	// 	fprintf(stderr, "response_record_keyval_set : pid error\n");
+	// 	response_status_set(res, RES_STATUS_ERROR);
+		
+	// 	return -1;
+	// }
+	
+	response_record_push(res, &rec);
 	response_status_set(res, RES_STATUS_OK);
 
 	return 0;
 }
 
-int ecafe_request_screenshot(struct request *req, struct response *res)
+int ecafe_request_screenshot(struct request *req, struct response *res, int connfd)
 {
+	int rv;
 	int imgp, img_size;
-	char buf[1024 * 200];
+	char img_buf[1024 * 1024]; /* 1 MB */
+	char img_ssize[24];
 
 	if (req == NULL || res == NULL)
 		return -1;
+	
+	response_status_set(res, RES_STATUS_OK);
+
+	if (strcmp(request_header_get(req, PARAM_STAGE), "request") != 0)
+		return -1;
 
 	if(system_linux_screenshot(IMG_ADDR) == -1) {
-		response_status_set(res, RES_STATUS_ERROR);
+		perror("ecafe_request_screenshot/system_linux_screenshot error");
 		return -1;
 	}
 
 	if ((imgp = open(IMG_ADDR, O_RDONLY)) == -1) {
-		response_status_set(res, RES_STATUS_ERROR);
+		perror("ecafe_request_screenshot/open error");
 		return -1;
 	}
 
-	if ((img_size = read(imgp, buf, sizeof(buf))) == -1) {
-		perror("test_response_parse_binary error");
-
+	if ((img_size = read(imgp, img_buf, sizeof(img_buf))) == -1) {
+		perror("ecafe_request_screenshot/read error");
 		return -1;
 	}
 
-	printf("Image size : %d\n", img_size);
+	sprintf(img_ssize, "%d", img_size);
+	printf("Size of image : %s", img_ssize);
+	response_header_set(res, "content-len", img_ssize);
+	response_header_set(res, PARAM_STAGE, "request");
 
-	response_status_set(res, RES_STATUS_DATA);
-	response_body_binary_set(res, (u_int8_t *) buf, img_size);
+	if (ecafe_response_send(res, connfd) == -1)
+		return -1;
+
+	if ((rv = ecafe_request_recv(connfd, req)) == -1 || rv == 0)
+		return -1;
+
+	if (strcmp(request_header_get(req, PARAM_STAGE), "transfer") != 0)
+		return -1;
+
+	if (write(connfd, img_buf, img_size) == -1) {
+		perror("ecafe_request_screenshot/write error");
+		return -1;
+	}
+
+	if ((rv = ecafe_request_recv(connfd, req)) == -1 || rv == 0)
+		return -1;
+
+	if (strcmp(request_header_get(req, PARAM_STAGE), "finished") != 0)
+		return -1;
 
 	return 0;
 }
 
-int ecafe_response_send(int client, struct response *res)
+int ecafe_request_notification(struct request *req, struct response *res)
+{
+	char *notification;
+
+	if (req == NULL || res == NULL)
+		return -1;
+
+	if((notification = request_param_get(req, PARAM_NOTIFICATION)) == NULL) {
+		response_status_set(res, RES_STATUS_ERROR);		
+		return -1;
+	}
+
+	if(system_linux_notify(APP_NAME, notification) == -1) {
+		response_status_set(res, RES_STATUS_ERROR);
+		return -1;
+	}
+	response_status_set(res, RES_STATUS_CREATED);
+
+	return 0;
+}
+
+int ecafe_response_send(struct response *res, int connfd)
 {
 	int nbytes;
-	char buf[1024 * 1000]; /* 1 MB */
+	char buf[1024 * 10]; /* 10 kb */
 
 	if ((nbytes = response_prepare(res, buf, sizeof(buf))) == -1) {
 		fprintf(stderr, "response_prepare error \n");
@@ -207,10 +290,11 @@ int ecafe_response_send(int client, struct response *res)
 	}
 
 	buf[nbytes] = 0;
-	// puts(buf);
+	puts(buf);
+	// fprintf(stderr, "ECAFE: %16s", buf);
 	fprintf(stderr, "Size : %d\n", nbytes);
 
-	if ((nbytes = write(client, buf, nbytes)) == -1) {
+	if ((nbytes = write(connfd, buf, nbytes)) == -1) {
 		perror("write error");
 		return -1;
 	}
@@ -221,4 +305,27 @@ int ecafe_response_send(int client, struct response *res)
 	}
 
 	return 0;
+}
+
+int ecafe_request_recv(int connfd, struct request *req)
+{
+	int nbytes = 0;
+	char buf[1024 * 10];
+
+	if ((nbytes = read(connfd, buf, sizeof(buf))) == -1) {
+		perror("read error");
+		return -1;
+	}
+	
+	if (nbytes == 0)
+		return 0;
+	
+	puts(buf);
+
+	if(!request_parse(buf, nbytes, req)) {
+		fprintf(stderr, "response_parse : error\n");
+		return -1;
+	}
+
+	return nbytes;
 }

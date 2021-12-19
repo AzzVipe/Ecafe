@@ -62,6 +62,16 @@ int ecafe_request_getdetails(struct request *req)
 	return 0;
 }
 
+int ecafe_request_client(struct request *req)
+{
+	char uri[] = "/client";
+
+	request_type_set(req, REQ_TYPE_POST);
+	request_uri_set(req, uri);
+
+	return 0;
+}
+
 int ecafe_request_action(struct request *req)
 {
 	char uri[] = "/action";
@@ -90,26 +100,6 @@ int ecafe_request_screenshot(struct request *req)
 int ecafe_request_notification(struct request *req)
 {
 	char uri[] = "/notification";
-
-	request_type_set(req, REQ_TYPE_POST);
-	request_uri_set(req, uri);
-
-	return 0;
-}
-
-int ecafe_request_clientall(struct request *req)
-{
-	char uri[] = "/clientall";
-
-	request_type_set(req, REQ_TYPE_POST);
-	request_uri_set(req, uri);
-
-	return 0;
-}
-
-int ecafe_request_client(struct request *req)
-{
-	char uri[] = "/client";
 
 	request_type_set(req, REQ_TYPE_POST);
 	request_uri_set(req, uri);

@@ -93,10 +93,11 @@ void client_dump(struct client *temp)
 	printf("Hostname  : %s\n", temp->hostname);
 	printf("Username  : %s\n", temp->username);
 	printf("Uptime    : %s\n", temp->uptime);
-	printf("State     : %s\n", temp->state);
+	printf("State     : %s\n", (temp->is_online) ? "online" : "offline");
 	printf("IP        : %s\n", temp->ip);
 	printf("Pid       : %d\n\n", temp->pid);
 }
+
 
 char *client_ipstr(struct client *temp)
 {
@@ -126,4 +127,3 @@ void client_active_unset(void)
 {
 	active_client = NULL;
 }
-

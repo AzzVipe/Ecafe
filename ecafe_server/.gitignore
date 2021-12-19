@@ -1,0 +1,4 @@
+server
+test_server
+objs
+libs/*.o

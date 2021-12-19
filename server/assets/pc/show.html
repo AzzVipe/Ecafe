@@ -27,6 +27,13 @@
 	<button @click="powerOffClient()" class="text-white bg-red-500 border-0 py-2 px-8 mr-3 focus:outline-none hover:bg-indigo-600 rounded text-lg">
 		Shutdown
 	</button>
+	<a :href="'/client/screenshot?id=' + client_id" class="text-white bg-yellow-500 border-0 py-2 px-8 mr-3 focus:outline-none hover:bg-indigo-600 rounded text-lg" target="_blank">New Screenshot</a>
+	<button @click="screenshotClient()" class="text-white bg-yellow-500 border-0 py-2 px-8 mr-3 focus:outline-none hover:bg-indigo-600 rounded text-lg">
+		Screenshot
+	</button>
+	<button @click="notificationClient()" class="text-white bg-indigo-500 border-0 py-2 px-8 mr-3 focus:outline-none hover:bg-indigo-600 rounded text-lg">
+		Notify Client
+	</button>
 </div>
 <script type="text/javascript">
 let app = new Vue({
@@ -34,6 +41,7 @@ let app = new Vue({
 	data: {
 		client_id: 0,
 		msg: "This is a test message for now",
+		notification: "5 mins left",
 	},
 	methods: {
 		lockClient: function() {
@@ -56,7 +64,14 @@ let app = new Vue({
 			let url = "/client/poweroff?id=" + this.client_id;
 			this.sendRequest(url);
 		},
-
+		screenshotClient: function() {
+			let url = "/client/screenshot?id=" + this.client_id;
+			this.sendRequest(url);
+		},
+		notificationClient: function() {
+			let url = "/client/notification?id=" + this.client_id + "&notification=" + this.notification;
+			this.sendRequest(url);
+		},
 
 		sendRequest(url) {
 			AxiosRequest.get(url, {
