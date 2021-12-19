@@ -1,0 +1,40 @@
+/* Some overrides on top of resets.scss (taken from https://gist.github.com/DavidWells/18e73022e723037a50d6) */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+html {
+    font-family: "Inter", sans-serif;
+    line-height: 1.5;
+}
+
+body {
+	line-height: inherit;
+    overflow-x: hidden;
+    background-color: $background-color;
+}
+
+html,
+button,
+input,
+select,
+textarea {
+    color: inherit;
+}
+
+a {
+	text-decoration: none;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+a:focus, button:focus, select:focus, input:focus {
+    outline: 0;
+}
+
+input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}

@@ -1,0 +1,35 @@
+.clients-header {
+	padding-bottom: 1rem;
+	border-bottom: 1px solid #343039;
+
+	.clients-header-container {
+		display: flex;
+		align-items: center;
+		padding: 0 1rem;
+
+		.clients-header-icon {
+			cursor: pointer;
+			color: #888;
+		}
+	}
+}
+
+.clients, .container-body {
+	padding: 1rem;
+	background-color: #1b1820;
+	border-radius: 8px;
+	border: 1px solid #343039;
+}
+
+.clients-body {
+	display: grid;
+	grid-gap: 1.75rem;
+	padding: 1rem 2rem 2.75rem 2rem;
+	margin-left: -1rem;
+	margin-right: -1rem;
+}
+
+.search-box > i {
+	font-size: 1rem;
+	color: #888;
+}

@@ -1,0 +1,63 @@
+.taskbar-menu-icon {
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: .25rem;
+	padding: 0 .5rem;
+
+	.dropdown {
+		display: none;
+		padding-top: .5rem;
+		position: absolute;
+		top: 100%;
+		right: 0;
+		z-index: 999;
+
+		.dropdown-wrapper {
+			display: block;
+			padding: .5rem;
+			width: 150px;
+			border-radius: .5rem;
+			background-color: #232028;
+			border: 1px solid #343039;
+			
+			.dropdown-menu {
+				display: flex;
+				flex-direction: column;
+
+				&-item {
+					display: block;
+					padding: .5rem 1rem;
+					// border: 1px solid #343039;
+					// border-bottom: 1px solid #343039;
+					color: #717171;
+					font-size: 1rem;
+					transition: all 100ms ease-in;
+					border-radius: .5rem;
+					// background-color: #1b1820;
+
+					&:hover {
+						background-color: #1b1820;
+						color: #f0f0f0;
+					}
+				 }
+			}
+		}
+
+
+	}
+
+	&:hover .dropdown {
+		display: block;
+	}
+
+	&:hover {
+		background-color: #5E5768;
+		color: #717171;
+	}
+
+	&.has-status-online {
+		position: relative;
+	}
+}

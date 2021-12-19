@@ -1,0 +1,38 @@
+.toast {
+	width: 100%;
+	max-width: 350px;
+	padding: 1rem;
+	background-color: white;
+	border-radius: 8px;
+	position: fixed;
+	font-family: inherit;
+	font-size: 1rem;
+	right: 50px;
+	bottom: 0;
+	transform: translateY(100%);
+	animation: pop-up 300ms ease-in forwards;
+}
+
+.is-success {
+	background-color: #a9e5a9;
+	color: #547754;
+}
+
+.is-danger {
+	background-color: #fe9393;
+	color: #E14747;
+}
+
+@keyframes pop-up {
+	0% {
+		transform: translateY(100%);
+	}
+	90% {
+		transform: translateY(-160%);
+		box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.15);
+	}
+	100% {
+		transform: translateY(-120%);
+		box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.15);
+	}
+}

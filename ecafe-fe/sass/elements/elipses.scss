@@ -1,0 +1,15 @@
+.elipses {
+	width: 1rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 1rem;
+
+	.elipse {
+		width: 4px;
+		height: 4px;
+		display: block;
+		background: #111013;
+		border-radius: 100%;
+	}
+}

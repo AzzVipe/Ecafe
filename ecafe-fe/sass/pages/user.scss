@@ -1,0 +1,49 @@
+.form-container {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	// margin-top: 2rem;
+	// margin-bottom: 2rem;
+	padding: 1rem;
+	padding-top: 2rem;
+
+}
+
+form label {
+	color: #AAA8A8;
+	margin-bottom: 18px;
+}
+
+form input {
+	background-color: #111013;
+	border: none;
+	border-radius: 8px;
+	height: 45px;
+	color: #626262;
+	padding-left: 1rem;
+}
+
+.generic-field {
+	display: flex;
+	flex-direction: column;
+	width: 309px;
+	margin-bottom: 2rem;
+}
+
+.address-field {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	margin-bottom: 2rem;
+}
+
+.address-field textarea {
+	background-color: #111013;
+	border: none;
+	border-radius: 8px;
+	height: 90px;
+	color: #626262;
+	padding: 1rem;
+	font-family: inherit;
+}
+

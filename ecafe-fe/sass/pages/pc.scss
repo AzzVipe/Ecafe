@@ -1,0 +1,20 @@
+.pc-header, .container-header {
+	padding-top: .75rem;
+	padding-bottom: 1.75rem;
+	border-bottom: 1px solid #343039;
+	display: flex;
+}
+
+.pc-title, .container-title {
+	font-size: 20px;
+	font-weight: 700;
+	color: #F0F0F0;
+	margin-right: auto;
+	margin-left: auto;
+}
+	
+.pc-body {
+	padding: 2.75rem 2rem;
+	margin-left: -1rem;
+	margin-right: -1rem;
+}

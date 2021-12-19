@@ -1,0 +1,32 @@
+.button {
+	padding: 0;
+	margin: 0;
+	border: 0;
+	background: none;
+	box-sizing: border-box;
+	position: relative;
+
+	height: 2.5rem;
+	display: inline-flex;
+	align-items: center;
+	padding-left: 1.5rem;
+	padding-right: 1.5rem;
+	border-radius: .5rem;
+	background-color: #5E5768;
+	color: #232028;
+	font-size: 1rem;
+	border: 1px solid transparent;
+}
+
+.button.is-sm {
+	height: 2rem;
+	padding-left: 1rem;
+	padding-right: 1rem;
+}
+
+.arrow-left {
+	color: #F0F0F0;
+	font-size: 24px;
+	text-decoration: none;
+}
+

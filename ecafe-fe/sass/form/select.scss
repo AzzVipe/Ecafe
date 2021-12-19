@@ -1,0 +1,43 @@
+.select select {
+	padding: 0;
+	apperance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	border: 0;
+	box-sizing: border-box;
+	background-image: none;
+	outline: 0;
+	padding-left: 1rem;
+	background: none;
+	font-size: 1rem;
+	height: 100%;
+	color: #B95B5B;
+
+	position: relative;
+	z-index: 1;
+}
+.select {
+	display: flex;
+	height: 3.125rem;
+	box-sizing: border-box;
+	border-radius: .5rem;
+	background-color: #5E5768;
+	align-items: center;
+	position: relative;
+}
+
+.action-button .button, .action-button .select {
+	height: 3.125rem;
+}
+
+.select .icon {
+	position: absolute;
+	top: 50%;
+	right: 1rem;
+	transform: translateY(-50%);
+}
+
+.icon-play {
+	font-size: 1.5rem;
+	color: #B95B5B;
+}
