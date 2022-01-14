@@ -3,7 +3,10 @@ SRCSPATH=src
 LIBSPATH=lib
 OBJSPATH=obj
 CFLAGS=-Iinclude -I$(LIBSPATH) -Wall
-CFLAGS+=-DDEV
+
+ifdef dev
+	CFLAGS+=-DDEV
+endif
 
 OBJS= $(OBJSPATH)/ecafe_request.o $(OBJSPATH)/ecafe.o $(OBJSPATH)/command.o $(OBJSPATH)/system_linux.o
 	
