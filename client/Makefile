@@ -3,6 +3,8 @@ SRCSPATH=src
 LIBSPATH=lib
 OBJSPATH=obj
 CFLAGS=-Iinclude -I$(LIBSPATH) -Wall
+CFLAGS+=-DDEV
+
 OBJS= $(OBJSPATH)/ecafe_request.o $(OBJSPATH)/ecafe.o $(OBJSPATH)/command.o $(OBJSPATH)/system_linux.o
 	
 LIBS= $(LIBSPATH)/request.o $(LIBSPATH)/response.o $(LIBSPATH)/easyio.o $(LIBSPATH)/str.o $(LIBSPATH)/sock_lib.o \

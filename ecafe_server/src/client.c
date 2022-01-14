@@ -17,6 +17,20 @@ int clients_init(void)
 	return 0;
 }
 
+int is_client_timerset(void)
+{
+	Iter *iter = list_getiter(clients);
+	struct client *temp;
+
+	while((temp = iter_next(iter))) {
+		if (temp->timer) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 int client_getall(struct client ***client_array)
 {
 	int i = 0;

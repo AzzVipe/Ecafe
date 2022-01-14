@@ -21,7 +21,12 @@
 					<i class="ri-checkbox-blank-circle-fill" style="font-size: 8px"></i> {{ client.status }}
 				</p>
 			</div>
-			<div class="client-actions">
+			<div class="client-actions" @click='emitSetTimer'>
+				<div class="capsule">
+					<button class="button is-sm timer-button">
+						+ Timer
+					</button>
+				</div>
 				<div class="capsule" @click="emitStatusChangedEvent">
 					<button class="button is-sm" :class="[client.status === 'online' ? 'is-active-bg' : 'is-inactive-bg']">
 						<i :class="[client.status === 'online' ? 'ri-lock-fill' : 'ri-lock-unlock-fill']"/>

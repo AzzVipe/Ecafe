@@ -38,7 +38,16 @@ int ecafe_request_ping(struct request *req)
 	request_uri_set(req, uri);
 
 	return 0;
+}
 
+int ecafe_request_timer(struct request *req)
+{
+	char uri[] = "/timer";
+
+	request_type_set(req, REQ_TYPE_POST);
+	request_uri_set(req, uri);
+
+	return 0;
 }
 
 int ecafe_request_poweroff(struct request *req)
@@ -49,7 +58,6 @@ int ecafe_request_poweroff(struct request *req)
 	request_uri_set(req, uri);
 
 	return 0;
-
 }
 
 int ecafe_request_getdetails(struct request *req)

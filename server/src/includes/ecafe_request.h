@@ -21,6 +21,7 @@ int ecafe_request_client(struct request *req);
 int ecafe_request_lock(struct request *req);
 int ecafe_request_unlock(struct request *req);
 int ecafe_request_action(struct request *req);
+int ecafe_request_timer(struct request *req);
 int ecafe_request_message(struct request *req);
 int ecafe_request_ping(struct request *req);
 int ecafe_request_poweroff(struct request *req);

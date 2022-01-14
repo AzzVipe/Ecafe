@@ -10,6 +10,8 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
+
 #include <list.h>
 #include <iter.h>
 
@@ -24,6 +26,12 @@ typedef struct {
 	
 } User;
 
+struct client_timer {
+	char *uri;
+	time_t created_at;
+	time_t duration;
+};
+
 struct client {
 	int id;
 	int fd;
@@ -35,7 +43,7 @@ struct client {
 	User *user;
 	bool is_online;
 	struct sockaddr_in addr;
-	struct timeval last_active_at;
+	struct client_timer *timer;
 };
 
 int clients_init(void);
@@ -51,7 +59,6 @@ void client_active_set(struct client *client);
 struct client *client_active_get(void);
 void client_active_unset(void);
 
-
-
+int is_client_timerset(void);
 
 #endif

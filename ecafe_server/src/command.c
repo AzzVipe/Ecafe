@@ -8,12 +8,23 @@ const struct command commands[] = {
 	{COMMAND_MESSAGE,    URI_MESSAGE,    ecafe_request_message,    NULL, ecafe_response_message, NULL},
 	{COMMAND_POWEROFF,   URI_POWEROFF,   ecafe_request_poweroff,   NULL, ecafe_response_poweroff, NULL},
 	{COMMAND_ACTION,     URI_ACTION,     ecafe_request_action,     NULL, ecafe_response_action, NULL},
+	{COMMAND_TIMER,      URI_TIMER,      NULL, ecafe_timer, ecafe_response_timer, NULL},
 	{COMMAND_GETDETAILS, URI_GETDETAILS, ecafe_request_getdetails, NULL, NULL, ecafe_response_getdetails},
 	{COMMAND_SCREENSHOT, URI_SCREENSHOT, ecafe_request_screenshot, NULL, NULL, ecafe_response_screenshot},
 	{COMMAND_CLIENTALL,  URI_CLIENTALL,  NULL,  ecafe_clientall,   NULL, NULL},
 	{COMMAND_CLIENT,     URI_CLIENT,     NULL,  ecafe_client,      ecafe_response_client, NULL},
 	{NULL, NULL, NULL, NULL, NULL}
 };
+
+int command_get_index(const char *cmd)
+{
+	for (int i = 0; commands[i].cmd; ++i) {
+		if (strcmp(cmd, commands[i].cmd) == 0)
+			return i;
+	}
+
+	return -1;
+}
 
 int command_get_index_by_uri(const char *uri)
 {

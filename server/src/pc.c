@@ -17,6 +17,7 @@ int		page_pc_unlock(struct http_request *);
 int		page_pc_message(struct http_request *);
 int		page_pc_ping(struct http_request *);
 int		page_pc_action(struct http_request *);
+int		page_pc_timer(struct http_request *);
 int		page_pc_screenshot(struct http_request *);
 int		page_pc_notification(struct http_request *);
 int		page_pc_poweroff(struct http_request *);
@@ -168,7 +169,7 @@ page_pc_ping(struct http_request *req)
 {
 	struct request ecafe_req = {0};
 	char *res_error = "{\"message\": \"Failed to send ping request\"}";
-	char *res = "{\"message\": \"ping reply came back from cleint\"}";
+	char *res = "{\"message\": \"ping reply came back from client\"}";
 
 	http_response_header(req, "content-type", "application/json");
 	request_uri_set(&ecafe_req, "/ping");
@@ -209,6 +210,46 @@ page_pc_action(struct http_request *req)
 	return (KORE_RESULT_OK);
 }
 
+int		
+page_pc_timer(struct http_request *req)
+{
+	char *duration = NULL, *action = NULL;
+	struct request ecafe_req = {0};
+	char *res_error = "{\"message\": \"Failed to set timer\"}";
+	char *res = "{\"message\": \"timer set successfully\"}";
+
+	http_response_header(req, "content-type", "application/json");
+	request_uri_set(&ecafe_req, "/timer");
+	if (prepare_ecafe_request(req, &ecafe_req) == -1) {
+		http_response(req, 400, NULL, 0);
+		return (KORE_RESULT_OK);
+	}
+	// set duration in ecafe request struct
+	http_argument_get_string(req, "duration", &duration);
+	if (duration == NULL) {
+		http_response(req, 400, NULL, 0);
+		return (KORE_RESULT_OK);
+	}
+	request_param_set(&ecafe_req, "duration", duration);
+	
+	// set action in ecafe request struct
+	http_argument_get_string(req, "action", &action);
+	if (action == NULL) {
+		http_response(req, 400, NULL, 0);
+		return (KORE_RESULT_OK);
+	}
+	request_param_set(&ecafe_req, "action", action);
+
+	if (ecafe_timer(&ecafe_req) == -1) {
+		kore_log(LOG_ERR, "Failed to process timer request");
+		res = res_error;
+	}
+
+	http_response(req, HTTP_STATUS_OK, res, strlen(res));
+
+	return (KORE_RESULT_OK);
+}
+
 int
 page_pc_poweroff(struct http_request *req)
 {
@@ -223,7 +264,7 @@ page_pc_poweroff(struct http_request *req)
 		return (KORE_RESULT_OK);
 	}
 	if (ecafe_poweroff(&ecafe_req) == -1) {
-		kore_log(LOG_ERR, "Failed to process power off request");
+		kore_log(LOG_ERR, "Failed to process 'power off' request");
 		res = res_error;
 	}
 

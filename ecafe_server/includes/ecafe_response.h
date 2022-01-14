@@ -24,6 +24,7 @@ int ecafe_response_unlock(struct response *res);
 int ecafe_response_action(struct response *res);
 int ecafe_response_message(struct response *res);
 int ecafe_response_ping(struct response *res);
+int ecafe_response_timer(struct response *res);
 int ecafe_response_poweroff(struct response *res);
 int ecafe_response_notification(struct response *res);
 int ecafe_response_client(struct response *res);

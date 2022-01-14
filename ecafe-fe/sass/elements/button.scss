@@ -30,3 +30,14 @@
 	text-decoration: none;
 }
 
+.timer-button {
+	background-color: #1B1820;
+	color: #F0F0F0;
+	font-size: .75rem;
+
+	&:hover {
+		background-color: #111013;
+		color: #888888;
+	}
+}
+

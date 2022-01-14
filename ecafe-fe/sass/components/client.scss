@@ -20,7 +20,7 @@
 		}
 
 		.client-details {
-			grid-column: span 3 / span 3;
+			grid-column: span 2 / span 2;
 
 			.client-title-wrapper {
 				margin-bottom: 1rem;
@@ -39,6 +39,8 @@
 			display: inline-flex;
 			align-items: flex-start;
 			justify-content: flex-end;
+			grid-column: span 2 / span 2;
+			grid-gap: 1rem;
 		}
 	}
 }
