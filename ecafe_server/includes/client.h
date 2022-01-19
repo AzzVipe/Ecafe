@@ -27,7 +27,6 @@ typedef struct {
 } User;
 
 struct client_timer {
-	char *uri;
 	time_t created_at;
 	time_t duration;
 };
@@ -36,6 +35,7 @@ struct client {
 	int id;
 	int fd;
 	pid_t pid;
+	char *timer_uri;
 	char *hostname;
 	char *username;
 	char *ip;

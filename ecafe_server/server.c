@@ -196,7 +196,7 @@ int server_check_timeout(void)
 		if (client_array[i]->timer != NULL) {
 			expiry_time = client_array[i]->timer->created_at + client_array[i]->timer->duration;
 			current_time = time(NULL);
-			uri = client_array[i]->timer->uri;
+			uri = client_array[i]->timer_uri;
 
 			if (current_time >= expiry_time) {
 				fprintf(stderr, "TIMER timed out for id : %d & uri: %s\n", 

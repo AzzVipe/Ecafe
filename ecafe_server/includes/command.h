@@ -18,4 +18,6 @@ extern const struct command commands[];
 int command_get_index(const char *cmd);
 int command_get_index_by_uri(const char *uri);
 
+char *command_get_uri(const char *cmd);
+
 #endif

@@ -35,3 +35,12 @@ int command_get_index_by_uri(const char *uri)
 
 	return -1;
 }
+
+char *command_get_uri(const char *cmd)
+{
+	for (int i = 0; commands[i].cmd; ++i)
+		if (strcmp(cmd, commands[i].cmd) == 0)
+			return strdup(commands[i].uri);
+
+	return NULL;
+}
