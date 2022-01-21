@@ -5,7 +5,7 @@
 int ecafe_request_handle(char *buf, int connfd) /* Handling requests from server */
 {
 	int id, rv, index;
-	char *uri;
+	char *uri, *ptr;
 	struct request req = {};
 	struct client *temp;
 	
@@ -34,7 +34,12 @@ int ecafe_request_handle(char *buf, int connfd) /* Handling requests from server
 		return -1;
 	}
 
-	id = atoi(request_param_get(&req, "id"));
+	if (!(ptr = request_param_get(&req, "id"))) {
+		fprintf(stderr, "request_param_get: invalid id");
+		return -1;
+	}
+
+	id = atoi(ptr);
 	temp = client_get(id);
 
 	printf("Sending request to client.....\n");
@@ -51,6 +56,7 @@ int ecafe_response_handle(char *buf, int connfd) /* Hanlding client responses */
 	char *uri;
 	int index, nbytes, rv;
 	struct response res = {};
+	struct client *temp;
 
 	if ((nbytes = response_parse(buf, strlen(buf), &res)) == -1) {
 		fprintf(stderr, "ecafe_response_handle/response_parse error \n");
@@ -77,9 +83,19 @@ int ecafe_response_handle(char *buf, int connfd) /* Hanlding client responses */
 		return -1;
 	}
 
+	if ((temp = client_active_get())) {
+		if (temp->timer_uri && !(temp->timer)) {
+			/* Response is for action initiated by timer so do not send server the response */
+			temp->timer_uri = NULL;
+
+			return 0;
+		}
+	}
+
 	printf("Sending response to server.....\n");
 	if ((rv = ecafe_response_send(&res, connfd)) == -1) { /* Responsing back to server */
 		fprintf(stderr, "ecafe_request_send : error\n");
+
 		return -1;
 	}
 	puts("");
@@ -162,7 +178,79 @@ cleanup:
 	}
 	
 	return ret;
+}
+
+int ecafe_timer(struct request *req, int connfd)
+{
+	unsigned long sec;
+	int id, ret;
+	char *ptr, *uri;
+
+	struct client *temp;
+	struct response res = {};
+
+	ret = -1;
+
+	if (req == NULL)
+		goto cleanup;
+
+	if(!(uri = request_uri_get(req))) {
+		goto cleanup;	
+	}
+
+	if (!(ptr = request_param_get(req, "id")))
+		goto cleanup;
 	
+	id = atoi(ptr);
+
+	if (!(ptr = request_param_get(req, "duration")))
+		goto cleanup;
+	
+	sec = atol(ptr);
+
+	if (!(ptr = request_param_get(req, "action")))
+		goto cleanup;
+
+	if (!(temp = client_get(id)))
+		goto cleanup;
+
+	if (sec == 0) {
+		goto cleanup;
+	}
+
+	if (temp->timer || temp->timer_uri) {
+		goto cleanup;
+	}
+
+	if (!(temp->timer = malloc(sizeof(struct client_timer)))) {
+		perror("malloc");
+		goto cleanup;
+	}
+
+	if(!(temp->timer_uri = command_get_uri(ptr)))
+		goto cleanup;
+
+	fprintf(stderr, "URI : %s\n", temp->timer_uri);
+
+	temp->timer->duration = sec;
+	temp->timer->created_at = time(NULL);
+	if (temp->timer->created_at == (time_t) -1)
+		goto cleanup;
+
+	ret = 0;
+
+cleanup:
+	response_header_set(&res, "uri", uri);
+
+	if (ret == -1) {		
+		response_status_set(&res, RES_STATUS_ERROR);
+		ecafe_response_send(&res, connfd);
+	} else {
+		response_status_set(&res, RES_STATUS_OK);
+		ecafe_response_send(&res, connfd);
+	}
+
+	return ret;
 }
 
 void ecafe_log_error(int Errno, char *filename, int line)

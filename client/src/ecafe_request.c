@@ -17,10 +17,12 @@ int ecafe_request_lock(struct request *req, struct response *res)
 	if (req == NULL || res == NULL)
 		return -1;
 
-	// if(system_linux_lock() == -1) {
-	// 	response_status_set(res, RES_STATUS_ERROR);
-	// 	return -1;
-	// }
+#ifndef DEV
+	if(system_linux_lock() == -1) {
+		response_status_set(res, RES_STATUS_ERROR);
+		return -1;
+	}
+#endif
 	response_status_set(res, RES_STATUS_CREATED);
 
 	return 0;
@@ -31,10 +33,12 @@ int ecafe_request_unlock(struct request *req, struct response *res)
 	if (req == NULL || res == NULL)
 		return -1;
 
-	// if(system_linux_unlock() == -1) {
-	// 	response_status_set(res, RES_STATUS_ERROR);
-	// 	return -1;
-	// }
+#ifndef DEV
+	if(system_linux_unlock() == -1) {
+		response_status_set(res, RES_STATUS_ERROR);
+		return -1;
+	}
+#endif
 
 	response_status_set(res, RES_STATUS_CREATED);
 
@@ -123,10 +127,12 @@ int ecafe_request_poweroff(struct request *req, struct response *res)
 	if (req == NULL || res == NULL)
 		return -1;
 
+#ifndef DEV
 	if(system_linux_poweroff() == -1) {
 		response_status_set(res, RES_STATUS_ERROR);
 		return -1;
 	}
+#endif
 	response_status_set(res, RES_STATUS_CREATED);
 
 	return 0;

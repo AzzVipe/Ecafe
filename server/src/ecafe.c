@@ -68,6 +68,18 @@ int ecafe_action(struct request *req)
 	return ecafe_send_recieve(req, &res);
 }
 
+int ecafe_timer(struct request *req)
+{
+	struct response res = {0};
+
+	if (ecafe_request_timer(req) == -1)
+		return -1;
+
+	request_dump(req);
+
+	return ecafe_send_recieve(req, &res);
+}
+
 int ecafe_poweroff(struct request *req)
 {
 	struct response res = {0};
@@ -238,6 +250,9 @@ static int ecafe_send_recieve(struct request *req, struct response *res)
 		fprintf(stderr, "ecafe_response_recv : error\n");
 		return -1;
 	}
+
+	if (response_status_get(res) >= RES_STATUS_ERROR)
+		return -1;
 
 	return 0;
 }

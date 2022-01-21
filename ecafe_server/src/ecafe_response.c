@@ -64,6 +64,13 @@ int ecafe_response_poweroff(struct response *res)
 	return 0;
 }
 
+int ecafe_response_timer(struct response *res)
+{
+	// @TODO
+	
+	return 0;
+}
+
 int ecafe_response_getdetails(struct response *res, int connfd)
 {
 	struct client *client;

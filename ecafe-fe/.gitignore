@@ -4,6 +4,7 @@ node_modules
 .*
 !.gitignore
 
+*/*.map
 
 # local env files
 .env.local

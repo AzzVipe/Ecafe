@@ -13,7 +13,7 @@ LIBS=$(LIBSPATH)/request.o $(LIBSPATH)/response.o $(LIBSPATH)/easyio.o $(LIBSPAT
 OBJECTS=$(OBJSPATH)/ecafe.o $(OBJSPATH)/ecafe_request.o $(OBJSPATH)/ecafe_response.o \
 	$(OBJSPATH)/client.o $(OBJSPATH)/command.o $(LIBS)
 
-all: ecafe ecafe_request ecafe_response client command libs server test_server
+all: libs command ecafe_request ecafe_response ecafe client server test_server
 
 server: server.c $(OBJECTS)
 	$(CC) -o server server.c $(CFLAGS) $(OBJECTS) -lpthread -lm -ldl

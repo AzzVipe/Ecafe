@@ -395,7 +395,7 @@ input {
         object-fit: cover;
         border-radius: 8px; }
     .client .client-wrapper .client-details {
-      grid-column: span 3 / span 3; }
+      grid-column: span 2 / span 2; }
       .client .client-wrapper .client-details .client-title-wrapper {
         margin-bottom: 1rem; }
         .client .client-wrapper .client-details .client-title-wrapper .client-title {
@@ -407,7 +407,8 @@ input {
     .client .client-wrapper .client-actions {
       display: inline-flex;
       align-items: flex-start;
-      justify-content: flex-end; }
+      justify-content: flex-end;
+      grid-column: span 2 / span 2; }
 
 .client-heading-2 {
   color: #888888;
@@ -511,6 +512,47 @@ input {
   top: 50%;
   right: 1rem;
   transform: translateY(-50%); }
+
+.taskbar-menu-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: .25rem;
+  padding: 0 .5rem; }
+  .taskbar-menu-icon .dropdown {
+    display: none;
+    padding-top: .5rem;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 999; }
+    .taskbar-menu-icon .dropdown .dropdown-wrapper {
+      display: block;
+      padding: .5rem;
+      width: 150px;
+      border-radius: .5rem;
+      background-color: #232028;
+      border: 1px solid #343039; }
+      .taskbar-menu-icon .dropdown .dropdown-wrapper .dropdown-menu {
+        display: flex;
+        flex-direction: column; }
+        .taskbar-menu-icon .dropdown .dropdown-wrapper .dropdown-menu-item {
+          display: block;
+          padding: .5rem 1rem;
+          color: #717171;
+          font-size: 1rem;
+          transition: all 100ms ease-in;
+          border-radius: .5rem; }
+          .taskbar-menu-icon .dropdown .dropdown-wrapper .dropdown-menu-item:hover {
+            background-color: #1b1820;
+            color: #f0f0f0; }
+  .taskbar-menu-icon:hover .dropdown {
+    display: block; }
+  .taskbar-menu-icon:hover {
+    background-color: #5E5768;
+    color: #717171; }
+  .taskbar-menu-icon.has-status-online {
+    position: relative; }
 
 .button {
   padding: 0;
@@ -800,8 +842,16 @@ form input {
 * {
   box-sizing: border-box; }
 
-.pc-is-active {
-  color: #74c180; }
+.is-active {
+  color: #67A771; }
 
-.pc-is-inactive {
+.is-inactive {
   color: #b95b5b; }
+
+.is-active-bg {
+  background-color: #67A771; }
+
+.is-inactive-bg {
+  background-color: #b95b5b; }
+
+/*# sourceMappingURL=styles.css.map */

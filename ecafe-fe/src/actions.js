@@ -71,6 +71,21 @@ const actions = [
 		neadRefresh: false,
 		massActionable: false,
 	},
+	{
+		name: "Timer",
+		cmd: "timer",
+		onRequest: (action, data) => {
+			let time = prompt("Set the timer(in minutes)");
+			data.append("time", time);
+			return sendRequest(action, data);
+		},
+		onResponse: null,
+		canSendRequest: false,
+		overrideResponseHandler: false,
+		canShowToast: true,
+		neadRefresh: false,
+		massActionable: false,
+	},
 ];
 
 function sendRequest(action, data) {

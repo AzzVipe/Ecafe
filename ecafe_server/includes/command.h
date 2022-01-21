@@ -1,8 +1,8 @@
 #ifndef __COMMAND_H_
 #define __COMMAND_H_ 
 
-#include <ecafe.h>
 #include <macros.h>
+#include <ecafe.h>
 
 struct command {
 	char *cmd;
@@ -15,6 +15,9 @@ struct command {
 
 extern const struct command commands[];
 
-int command_get_index_by_uri(const char *cmd);
+int command_get_index(const char *cmd);
+int command_get_index_by_uri(const char *uri);
+
+char *command_get_uri(const char *cmd);
 
 #endif
