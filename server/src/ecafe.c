@@ -297,4 +297,10 @@ static void ecafe_client_populate(struct client *client, struct record *rec)
 		client->uptime = strdup(ptr);
 	if ((ptr = response_keyval_get(rec, "ip")))
 		client->ip = strdup(ptr);
+	if ((ptr = response_keyval_get(rec, "timer_uri")))
+		client->timer_uri = strdup(ptr);
+	if ((ptr = response_keyval_get(rec, "timer_created_at")))
+		client->timer_created_at = atol(ptr);
+	if ((ptr = response_keyval_get(rec, "timer_duration")))
+		client->timer_duration = atol(ptr);
 }

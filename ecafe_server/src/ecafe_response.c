@@ -218,8 +218,17 @@ void ecafe_response_prepare_client(struct response *res, struct client *temp)
 	sprintf(buf, "%d", temp->pid);
 	response_keyval_push(&rec, "pid", buf);
 
-	response_keyval_push(&rec, "ip", temp->ip);
+	if (temp->timer_uri) {
+		sprintf(buf, "%ld", temp->timer->created_at);
+		response_keyval_push(&rec, "timer_created_at", buf);
 
+		sprintf(buf, "%ld", temp->timer->duration);
+		response_keyval_push(&rec, "timer_duration", buf);
+
+		response_keyval_push(&rec, "timer_uri", temp->timer_uri);
+	}
+	
+	response_keyval_push(&rec, "ip", temp->ip);
 	response_record_push(res, &rec);
 }
 

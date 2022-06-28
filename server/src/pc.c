@@ -27,7 +27,7 @@ page_pc_index(struct http_request *req)
 {
 	int ret;
 	struct kore_buf *buf;
-	const char *client_json_format = "{\"id\": %d, \"hostname\": \"%s\", \"username\": \"%s\", \"status\": \"%s\", \"uptime\": \"%s\", \"ip\": \"%s\", \"pid\": %d}";
+	const char *client_json_format = "{\"id\": %d, \"hostname\": \"%s\", \"username\": \"%s\", \"status\": \"%s\", \"uptime\": \"%s\", \"ip\": \"%s\", \"pid\": %d, \"timer_uri\": \"%s\", \"timer_created_at\": \"%ld\", \"timer_duration\": \"%ld\"}";
 	struct client **clients;
 	// char *res_error = "{\"message\": \"Failed to fetch clients\"}";
 
@@ -60,7 +60,7 @@ page_pc_show(struct http_request *req)
 {
 	int ret, id = 0;
 	struct kore_buf *buf;
-	const char *client_json_format = "{\"id\": %d, \"hostname\": \"%s\", \"username\": \"%s\", \"status\": \"%s\", \"uptime\": \"%s\", \"ip\": \"%s\", \"pid\": %d}";
+	const char *client_json_format = "{\"id\": %d, \"hostname\": \"%s\", \"username\": \"%s\", \"status\": \"%s\", \"uptime\": \"%s\", \"ip\": \"%s\", \"pid\": %d, \"timer_uri\": \"%s\", \"timer_created_at\": \"%ld\", \"timer_duration\": \"%ld\"}";
 	struct client client = {};
 	// char *res_error = "{\"message\": \"Failed to fetch client\"}";
 
@@ -380,5 +380,8 @@ prepare_client_json(struct kore_buf *buf, const char *client_json_format, struct
 		client->state,
 		client->uptime,
 		client->ip,
-		client->pid);
+		client->pid,
+		client->timer_uri,
+		client->timer_created_at,
+		client->timer_duration);
 }
